@@ -54,3 +54,38 @@ def compute_time_delta(events: list[int], sr: int, hop_length: int = 512) -> flo
     frame_delta = events[1] - events[0] # frames between event[0] and event[1]
     time_delta_seconds = (frame_delta * hop_length) / sr # seconds between event[0] and event[1]
     return time_delta_seconds * 1000 # to milliseconds
+
+def analyze(file_path: str, threshold_ratio: float = 0.3) -> dict:
+    """
+    Orchestrates the full acoustic analysis pipeline.
+    Loads audio, computes energy, detects events and calculates time delta.
+    """
+    y, sr = load_audio(file_path)
+    energy = compute_energy(y)
+    try:
+        events = detect_events(energy, threshold_ratio)
+        delta = compute_time_delta(events, sr)
+
+    except ValueError as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "events_detected": len(events)
+        }
+    
+    if delta is None:
+        return {
+            "success": False,
+            "error": "Not enough events detected, try lowering the threshold",
+            "events_detected": len(events)
+        }
+    timestamps_ms = []
+    for event in events:
+        timestamps_ms.append((event * 512 / sr) * 1000)
+
+    return {
+        "success": True,
+        "time_delta_ms": delta,
+        "events_detected": len(events),
+        "timestamps_ms": timestamps_ms
+    }
