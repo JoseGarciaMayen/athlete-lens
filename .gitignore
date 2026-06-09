@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# uv
+backend/uv.lock
+
+# Base de datos
+*.sqlite
+*.db
+
+# Variables de entorno
+.env
+
+# Node
+frontend/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
