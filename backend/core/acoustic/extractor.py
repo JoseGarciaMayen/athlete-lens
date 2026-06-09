@@ -34,7 +34,7 @@ def detect_events(energy: np.ndarray, threshold_ratio: float = 0.3) -> list[int]
 
     for i in range(len(energy)):
         if energy[i] > threshold and not above:
-            events.append[i]
+            events.append(i)
             above = True
         elif energy[i] <= threshold:
             above = False
