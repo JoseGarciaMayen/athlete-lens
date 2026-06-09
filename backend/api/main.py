@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.routes.acoustic import router as acoustic_router
+
 app = FastAPI(
     title="Athlete Lens API",
     version="0.1.0"
@@ -14,6 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(acoustic_router, prefix="/api")
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
