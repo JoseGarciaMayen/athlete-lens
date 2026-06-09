@@ -1,5 +1,8 @@
 import numpy as np
 import librosa
+import os
+
+from core.acoustic.audio_extractor import extract_audio_from_video
 
 def load_audio(file_path: str) -> tuple[np.ndarray, int]:
     """Load audio file and return signal and sample rate."""
@@ -60,7 +63,23 @@ def analyze(file_path: str, threshold_ratio: float = 0.3, hop_length: int = 512)
     Orchestrates the full acoustic analysis pipeline.
     Loads audio, computes energy, detects events and calculates time delta.
     """
-    y, sr = load_audio(file_path)
+    AUDIO_EXTENSIONS = [".wav", ".mp3", ".m4a", ".flac", ".ogg"]
+
+    extension = os.path.splitext(file_path)[1].lower()
+    temp_audio_path = None
+
+    if extension not in AUDIO_EXTENSIONS:
+        temp_audio_path = extract_audio_from_video(file_path)
+        audio_path = temp_audio_path
+    else:
+        audio_path = file_path
+
+    try:
+        y, sr = load_audio(audio_path)
+    finally:
+        if temp_audio_path is not None:
+            os.remove(temp_audio_path)
+
     energy = compute_energy(y, hop_length=hop_length)
     try:
         events = detect_events(energy, threshold_ratio)
