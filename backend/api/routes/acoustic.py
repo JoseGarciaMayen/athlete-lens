@@ -43,8 +43,7 @@ async def analyze_acoustic(
         db=db, 
         session_id=session.id, 
         time_delta_ms=result["time_delta_ms"], 
-        events_detected=result["events_detected"], 
-        raw_file_path=raw_path
+        events_detected=result["events_detected"]
         )
 
     return result

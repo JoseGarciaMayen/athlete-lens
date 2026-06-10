@@ -49,12 +49,11 @@ def get_sessions(db: Session) -> list[SessionModel]:
     return db.query(SessionModel).order_by(SessionModel.date.desc()).all()
 
 
-def create_acoustic_metric(db: Session, session_id: int, time_delta_ms: float, events_detected: int, raw_file_path: str = None) -> AcousticMetric:
+def create_acoustic_metric(db: Session, session_id: int, time_delta_ms: float, events_detected: int) -> AcousticMetric:
     metric = AcousticMetric(
         session_id=session_id,
         time_delta_ms=time_delta_ms,
-        events_detected=events_detected,
-        raw_file_path=raw_file_path
+        events_detected=events_detected
     )
     db.add(metric)
     db.commit()

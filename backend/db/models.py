@@ -37,7 +37,6 @@ class AcousticMetric(Base):
     session_id = Column(Integer, ForeignKey("session.id"), nullable=False)
     time_delta_ms = Column(Float)
     events_detected = Column(Integer)
-    raw_file_path = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("Session", back_populates="acoustic_metrics")
@@ -53,7 +52,6 @@ class VerticalMetric(Base):
     fps_used = Column(Integer)
     takeoff_frame = Column(Integer)
     landing_frame = Column(Integer)
-    raw_file_path = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("Session", back_populates="vertical_metrics")
