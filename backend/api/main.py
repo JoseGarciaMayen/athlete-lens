@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.acoustic import router as acoustic_router
+from db.database import create_tables
 
 app = FastAPI(
     title="Athlete Lens API",
@@ -22,3 +23,6 @@ app.include_router(acoustic_router, prefix="/api")
 def health_check():
     return {"status": "ok"}
 
+@app.on_event("startup")
+def startup():
+    create_tables()
