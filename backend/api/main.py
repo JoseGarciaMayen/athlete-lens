@@ -4,10 +4,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes.acoustic import router as acoustic_router
 from api.routes.sessions import router as sessions_router
 from db.database import create_tables
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    create_tables()
+    yield
 
 app = FastAPI(
     title="Athlete Lens API",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -25,6 +32,3 @@ app.include_router(sessions_router, prefix="/api")
 def health_check():
     return {"status": "ok"}
 
-@app.on_event("startup")
-def startup():
-    create_tables()
