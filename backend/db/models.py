@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Date
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -22,7 +22,7 @@ class Session(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     athlete_id = Column(Integer, ForeignKey("athlete.id"), nullable=False)
-    date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    date = Column(Date, nullable=False, default=lambda: datetime.now(timezone.utc).date())
     notes = Column(String, nullable=True)
 
     athlete = relationship("Athlete", back_populates="sessions")
