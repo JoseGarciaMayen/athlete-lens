@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app):
     create_tables()
+    app.state.model = YOLO("yolov8n-pose.pt") # Preload model into memory to avoid loading it on every request
     yield
 
 app = FastAPI(
