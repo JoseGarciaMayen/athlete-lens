@@ -4,20 +4,15 @@ __pycache__/
 .venv/
 *.egg-info/
 
-# uv
 backend/uv.lock
 
-# Base de datos
 *.sqlite
 *.db
 
-# Variables de entorno
 .env
 
-# Node
 frontend/node_modules/
 
-# OS
 .DS_Store
 Thumbs.db
 
@@ -27,3 +22,10 @@ backend/tests/core/vertical/fixtures/
 backend/test.db
 
 *.pt
+
+test.py
+
+*.mp4
+
+backend/core/acoustic/README.md
+backend/core/vertical/README.md
