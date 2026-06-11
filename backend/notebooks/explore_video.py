@@ -72,3 +72,51 @@ plt.legend()
 plt.gca().invert_yaxis()
 plt.savefig("notebooks/ankle_tracking.png", dpi=150, bbox_inches="tight")
 print("Plot saved to notebooks/ankle_tracking.png")
+
+# Visualize YOLO ankle position overlay
+
+import sys
+sys.path.append("..")
+from core.vertical.extractor import detect_takeoff_and_landing
+
+ankle_y = [(l + r) / 2 for l, r in zip(left_ankle_y, right_ankle_y)] # mean of the positions of right and left ankles
+
+result = detect_takeoff_and_landing(ankle_y, fps)
+print(result)
+
+cap = cv2.VideoCapture(VIDEO_PATH)
+fps = cap.get(cv2.CAP_PROP_FPS)
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+out = cv2.VideoWriter("notebooks/ankle_overlay.mp4", fourcc, fps, (width, height))
+
+rest_position = int(result["rest_position"])
+threshold = int(result["threshold"])
+
+frame_idx = 0
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # rest position line
+    cv2.line(frame, (0, rest_position), (width, rest_position), (0, 255, 0), 2)
+    cv2.putText(frame, "rest", (10, rest_position - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+    # threshold line
+    cv2.line(frame, (0, threshold), (width, threshold), (255, 0, 0), 2)
+    cv2.putText(frame, "threshold", (10, threshold - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+
+    if frame_idx < len(ankle_y):
+        y = int(ankle_y[frame_idx])
+        x = 400
+        cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
+
+    out.write(frame)
+    frame_idx += 1
+
+cap.release()
+out.release()
+
