@@ -5,6 +5,7 @@ from api.routes.acoustic import router as acoustic_router
 from api.routes.sessions import router as sessions_router
 from db.database import create_tables
 from contextlib import asynccontextmanager
+from ultralytics import YOLO
 
 @asynccontextmanager
 async def lifespan(app):
