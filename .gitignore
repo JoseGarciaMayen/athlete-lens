@@ -25,3 +25,5 @@ backend/tests/core/acoustic/fixtures/
 backend/tests/core/vertical/fixtures/
 
 backend/test.db
+
+*.pt
