@@ -1,5 +1,6 @@
 import tempfile
 import os
+import subprocess
 import logging
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends, Request
@@ -16,15 +17,14 @@ router = APIRouter()
 @router.post("/analyze/vertical")
 def analyze_vertical(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
     session_date: str = Form(...),
     notes: str = Form(None),
+    jump_height_cm: float | None = Form(None),
     db: Session = Depends(get_db)
     ):
-    contents = file.file.read()
-
-    if not contents:
-        raise HTTPException(status_code=422, detail="File is empty")
+    if file is None and jump_height_cm is None:
+        raise HTTPException(status_code=422, detail="Either file or jump_height_cm is required")
 
     athlete = get_athlete(db)
     if athlete is None:
@@ -34,24 +34,39 @@ def analyze_vertical(
         session_date_parsed = date.fromisoformat(session_date)
     except ValueError:
         raise HTTPException(status_code=422, detail="Invalid session_date format, expected YYYY-MM-DD")
-        
+
     session = get_or_create_session(db=db, athlete_id=athlete.id, date=session_date_parsed, notes=notes)
 
-    model = request.app.state.model
+    if file is not None:
+        contents = file.file.read()
 
-    with tempfile.NamedTemporaryFile(delete=True, suffix=os.path.splitext(file.filename)[1]) as tmp:
-        tmp.write(contents)
-        tmp.flush()
-        raw_path = tmp.name
+        if not contents:
+            raise HTTPException(status_code=422, detail="File is empty")
 
-        try:
-            result = analyze(raw_path, model)
-        except Exception as e:
-            logger.exception("Unexpected error during vertical analysis")
-            raise HTTPException(status_code=500, detail="Internal error during video analysis")
+        model = request.app.state.model
 
-    if not result["success"]:
-        raise HTTPException(status_code=422, detail=result["error"])
+        with tempfile.NamedTemporaryFile(delete=True, suffix=os.path.splitext(file.filename)[1]) as tmp:
+            tmp.write(contents)
+            tmp.flush()
+            raw_path = tmp.name
+
+            try:
+                result = analyze(raw_path, model)
+            except Exception as e:
+                logger.exception("Unexpected error during vertical analysis")
+                raise HTTPException(status_code=500, detail="Internal error during video analysis")
+
+        if not result["success"]:
+            raise HTTPException(status_code=422, detail=result["error"])
+    else:
+        result = {
+            "success": True,
+            "jump_height_cm": jump_height_cm,
+            "flight_time_ms": None,
+            "takeoff_frame": None,
+            "landing_frame": None,
+            "fps_used": None,
+        }
 
     create_vertical_metric(
         db=db,
