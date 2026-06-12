@@ -59,3 +59,17 @@ def create_acoustic_metric(db: Session, session_id: int, time_delta_ms: float, e
     db.commit()
     db.refresh(metric)
     return metric
+
+def create_vertical_metric(db: Session, session_id: int, jump_height_cm: float, flight_time_ms: float, fps_used: int, takeoff_frame: int, landing_frame: int) -> VerticalMetric:
+    metric = VerticalMetric(
+        session_id=session_id,
+        jump_height_cm = jump_height_cm,
+        flight_time_ms = flight_time_ms,
+        fps_used = fps_used,
+        takeoff_frame = takeoff_frame,
+        landing_frame = landing_frame
+    )
+    db.add(metric)
+    db.commit()
+    db.refresh(metric)
+    return metric
