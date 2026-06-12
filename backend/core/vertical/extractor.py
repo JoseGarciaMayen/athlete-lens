@@ -114,6 +114,13 @@ def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: int) -> dic
             "success": False,
             "error": "Landing frame is previous or equal to takeoff frame"
         }
+
+    if fps <= 0:
+        return {
+            "success": False,
+            "error": "FPS must be greater than 0"
+        }
+
     t = (landing_frame - takeoff_frame) / fps
     h = (GRAVITY_M_S2 * (t ** 2))/8
     return {
