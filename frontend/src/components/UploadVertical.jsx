@@ -45,7 +45,7 @@ function UploadVertical() {
     }
 
     return (
-        <div className="max-w-md mx-auto p-6">
+        <>
             <h2 className="text-xl font-bold mb-4">Vertical jump</h2>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -102,7 +102,7 @@ function UploadVertical() {
                     <p>Frames: {result.takeoff_frame} → {result.landing_frame}</p>
                 </div>
             )}
-        </div>
+        </>
     );
 }
 
