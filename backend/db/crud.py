@@ -38,7 +38,7 @@ def create_session(db: Session, athlete_id: int, date: date, notes: str = None) 
     return session
 
 def get_or_create_session(db: Session, athlete_id: int, date: date, notes: str = None) -> SessionModel:
-    session = db.query(SessionModel).filter(SessionModel.date==date).first()
+    session = db.query(SessionModel).filter(SessionModel.date==date).filter(SessionModel.athlete_id==athlete_id).first()
     if session is not None:
         return session
     else:
