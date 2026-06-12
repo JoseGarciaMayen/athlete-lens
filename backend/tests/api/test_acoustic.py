@@ -40,7 +40,7 @@ def test_analyze_acoustic_persists_to_database(client, db_session):
     with open("tests/core/acoustic/fixtures/video.wav", "rb") as f:
         response = client.post(
             "/api/analyze/acoustic",
-            data={"session_date": "2026-06-09"},
+            data={"session_date": "2026-06-09", "distance_m": "30"},
             files={"file": ("audio.wav", f, "audio/wav")}
         )
 
@@ -50,3 +50,4 @@ def test_analyze_acoustic_persists_to_database(client, db_session):
     metrics = db_session.query(AcousticMetric).all()
     assert len(metrics) == 1
     assert metrics[0].time_delta_ms > 0
+    assert metrics[0].distance_m == 30
