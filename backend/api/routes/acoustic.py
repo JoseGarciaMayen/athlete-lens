@@ -30,7 +30,11 @@ async def analyze_acoustic(
     if athlete is None:
         raise HTTPException(status_code=400, detail="No athlete profile found. Please create your profile first.")
 
-    session_date_parsed = date.fromisoformat(session_date)
+    try:
+        session_date_parsed = date.fromisoformat(session_date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid session_date format, expected YYYY-MM-DD")
+        
     session = get_or_create_session(db=db, athlete_id=athlete.id, date=session_date_parsed, notes=notes)
 
     with tempfile.NamedTemporaryFile(delete=True, suffix = os.path.splitext(file.filename)[1]) as tmp:
