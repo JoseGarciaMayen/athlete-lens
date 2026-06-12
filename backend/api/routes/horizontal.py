@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/analyze/horizontal")
-async def analyze_horizontal(
+def analyze_horizontal(
     session_date: str = Form(...),
     jump_distance_cm: float = Form(...),
     notes: str = Form(None),

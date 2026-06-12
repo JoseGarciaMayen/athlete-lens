@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/analyze/acoustic")
-async def analyze_acoustic(
+def analyze_acoustic(
     file: UploadFile = File(...),
     session_date: str = Form(...),
     notes: str = Form(None),
     distance_m: int = Form(None),
     db: Session = Depends(get_db)
     ):
-    contents = await file.read()
+    contents = file.file.read()
 
     if not contents:
         raise HTTPException(status_code=422, detail="File is empty")

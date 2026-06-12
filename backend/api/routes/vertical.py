@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/analyze/vertical")
-async def analyze_vertical(
+def analyze_vertical(
     request: Request,
     file: UploadFile = File(...),
     session_date: str = Form(...),
     notes: str = Form(None),
     db: Session = Depends(get_db)
     ):
-    contents = await file.read()
+    contents = file.file.read()
 
     if not contents:
         raise HTTPException(status_code=422, detail="File is empty")
