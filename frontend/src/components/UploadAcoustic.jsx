@@ -5,22 +5,38 @@ function UploadAcoustic() {
     const [sessionDate, setSessionDate] = useState("");
     const [notes, setNotes] = useState("");
     const [distanceM, setDistanceM] = useState("");
+    const [manualTimeS, setManualTimeS] = useState("");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
 
     async function handleSubmit(e) {
         e.preventDefault();
+
+        if (!file && !manualTimeS) {
+            setError("You must upload a video or audio file or input time manually");
+            return;
+        }
+
         setLoading(true);
         setResult(null);
         setError(null);
 
         const formData = new FormData();
-        formData.append("file", file);
         formData.append("session_date", sessionDate);
+
+        if (file) {
+            formData.append("file", file);
+        }
+
+        if (manualTimeS) {
+            formData.append("time_delta_ms", parseFloat(manualTimeS));
+        }
+
         if (notes) {
             formData.append("notes", notes);
         }
+
         if (distanceM) {
             formData.append("distance_m", distanceM);
         }
@@ -40,6 +56,8 @@ function UploadAcoustic() {
                 setError(data.detail || "Unknown error");
             } else {
                 setResult(data);
+                setFile(null);
+                setManualTimeS("");
             }
         } catch (err) {
             setError("Could not connect to the server");
@@ -54,23 +72,6 @@ function UploadAcoustic() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
-                    <label className="block mb-1 font-medium">Audio or video</label>
-                    <input
-                        type="file"
-                        accept="audio/*,video/*"
-                        required
-                        onChange={(e) => setFile(e.target.files[0])}
-                        className="block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-md file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-blue-50 file:text-blue-700
-                            hover:file:bg-blue-100
-                            cursor:pointer"
-                    />
-                </div>
-
-                <div>
                     <label className="block mb-1 font-medium">Session date</label>
                     <input
                         type="date"
@@ -79,6 +80,38 @@ function UploadAcoustic() {
                         onChange={(e) => setSessionDate(e.target.value)}
                         className="block w-full border rounded px-2 py-1"
                     />
+                </div>
+
+                <div className="p-4 bg-gray-50 border rounded space-y-4">
+                    <div>
+                        <label className="block mb-1 font-medium">Option A: Audio or video</label>
+                        <input
+                            type="file"
+                            accept="audio/*,video/*"
+                            onChange={(e) => setFile(e.target.files[0])}
+                            className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100
+                                cursor:pointer"
+                        />
+                    </div>
+
+                    <div className="text-center text-sm font-medium text-gray-400">— OR —</div>
+
+                    <div>
+                        <label className="block mb-1 font-medium">Option B: Manual Time (seconds)</label>
+                        <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            value={manualTimeS}
+                            onChange={(e) => setManualTimeS(e.target.value)}
+                            className="block w-full border rounded px-2 py-1"
+                        />
+                    </div>
                 </div>
 
                 <div>
@@ -137,8 +170,8 @@ function UploadAcoustic() {
 
             {result && (
                 <div className="mt-4 p-3 bg-green-100 text-green-800 rounded">
-                    <p>Time delta: {(result.time_delta_ms / 1000).toFixed(2)} s</p>
-                    <p>Events detected: {result.events_detected}</p>
+                    <p>Time delta: {(result.time_delta_ms / 1000).toFixed(3)} s</p>
+                    {result.events_detected && <p>Events detected: {result.events_detected}</p>}
                 </div>
             )}
         </>
