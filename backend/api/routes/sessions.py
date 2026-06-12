@@ -24,6 +24,10 @@ def put_athlete_profile(data: AthleteUpdate, db: Session = Depends(get_db)):
 @router.post("/sessions")
 def post_session_profile(data: SessionCreate, db: Session = Depends(get_db)):
     athlete = get_athlete(db)
+
+    if athlete is None:
+        raise HTTPException(status_code=404, detail="No athlete profile found")
+
     session = create_session(db=db, athlete_id=athlete.id, date=data.date, notes=data.notes)
     return session
 
