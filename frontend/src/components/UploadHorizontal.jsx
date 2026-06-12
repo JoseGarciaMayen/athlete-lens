@@ -14,7 +14,6 @@ function UploadHorizontal() {
         setResult(null);
         setError(null);
 
-        // Utilizamos FormData tal cual para que coincida con el backend Form(...)
         const formData = new FormData();
         formData.append("session_date", sessionDate);
         formData.append("jump_distance_cm", distanceCm);
@@ -28,7 +27,7 @@ function UploadHorizontal() {
                 `${import.meta.env.VITE_API_URL}/api/analyze/horizontal`,
                 {
                     method: "POST",
-                    body: formData, // El navegador configurará Content-Type automáticamente
+                    body: formData,
                 }
             );
 
