@@ -19,6 +19,7 @@ async def analyze_acoustic(
     file: UploadFile = File(...),
     session_date: str = Form(...),
     notes: str = Form(None),
+    distance_m: int = Form(None),
     db: Session = Depends(get_db)
     ):
     contents = await file.read()
@@ -34,7 +35,7 @@ async def analyze_acoustic(
         session_date_parsed = date.fromisoformat(session_date)
     except ValueError:
         raise HTTPException(status_code=422, detail="Invalid session_date format, expected YYYY-MM-DD")
-        
+
     session = get_or_create_session(db=db, athlete_id=athlete.id, date=session_date_parsed, notes=notes)
 
     with tempfile.NamedTemporaryFile(delete=True, suffix = os.path.splitext(file.filename)[1]) as tmp:
@@ -57,7 +58,8 @@ async def analyze_acoustic(
         db=db, 
         session_id=session.id, 
         time_delta_ms=result["time_delta_ms"], 
-        events_detected=result["events_detected"]
+        events_detected=result["events_detected"],
+        distance_m=distance_m
         )
 
     return result

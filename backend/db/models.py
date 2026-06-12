@@ -37,6 +37,7 @@ class AcousticMetric(Base):
     session_id = Column(Integer, ForeignKey("session.id"), nullable=False)
     time_delta_ms = Column(Float)
     events_detected = Column(Integer)
+    distance_m = Column(Integer)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("Session", back_populates="acoustic_metrics")
