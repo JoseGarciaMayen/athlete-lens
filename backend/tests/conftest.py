@@ -35,5 +35,10 @@ def client(db_session):
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+
+    if not hasattr(app.state, "model"):
+        from ultralytics import YOLO
+        app.state.model = YOLO("yolov8n-pose.pt")
+
     yield TestClient(app)
     app.dependency_overrides.clear()
