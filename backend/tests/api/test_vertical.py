@@ -5,6 +5,7 @@ from db.crud import create_athlete
 from db.models import VerticalMetric
 
 
+@pytest.mark.integration
 def test_analyze_vertical_returns_success(client, db_session):
     create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
@@ -35,6 +36,7 @@ def test_analyze_vertical_returns_422_on_empty_file(client, db_session):
     assert response.status_code == 422
 
 
+@pytest.mark.integration
 def test_analyze_vertical_persists_to_database(client, db_session):
     create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
@@ -54,6 +56,7 @@ def test_analyze_vertical_persists_to_database(client, db_session):
     assert metrics[0].landing_frame == 132
 
 
+@pytest.mark.integration
 def test_analyze_vertical_invalid_date(client, db_session):
     create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
@@ -67,6 +70,7 @@ def test_analyze_vertical_invalid_date(client, db_session):
     assert response.status_code == 422
 
 
+@pytest.mark.integration
 def test_analyze_vertical_no_athlete(client, db_session):
     with open("tests/core/vertical/fixtures/video.mp4", "rb") as f:
         response = client.post(

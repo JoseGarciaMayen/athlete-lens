@@ -24,6 +24,7 @@ def test_compute_jump_landing_before_takeoff():
     assert result["success"] is False
     assert "error" in result
 
+@pytest.mark.integration
 def test_load_video_returns_cap_and_fps():
     video_path = "tests/core/vertical/fixtures/video.mp4"
 
@@ -74,6 +75,7 @@ def test_detect_takeoff_and_landing_no_movement():
     assert result["success"] is False
     assert result["error"] == "No upward movement detected"
 
+@pytest.mark.integration
 def test_analyze_full_pipeline():
     model = YOLO("yolov8n-pose.pt")
     video_path = "tests/core/vertical/fixtures/video.mp4"

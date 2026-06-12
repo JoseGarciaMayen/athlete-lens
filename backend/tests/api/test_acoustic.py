@@ -8,6 +8,7 @@ from db.crud import create_athlete
 from db.models import AcousticMetric
 
 
+@pytest.mark.integration
 def test_analyze_acoustic_returns_success(client, db_session):
     create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
@@ -35,6 +36,7 @@ def test_analyze_acoustic_returns_422_on_empty_file(client, db_session):
 
     assert response.status_code == 422
 
+@pytest.mark.integration
 def test_analyze_acoustic_persists_to_database(client, db_session):
     athlete = create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
