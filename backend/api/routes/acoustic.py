@@ -1,5 +1,7 @@
 import tempfile
 import os
+import subprocess
+import logging
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
 from core.acoustic.extractor import analyze
@@ -7,6 +9,8 @@ from db.crud import get_or_create_session, create_acoustic_metric, get_athlete
 from db.database import get_db
 from sqlalchemy.orm import Session
 from datetime import date
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -36,8 +40,14 @@ async def analyze_acoustic(
 
         try:
             result = analyze(raw_path)
+        except subprocess.CalledProcessError:
+            raise HTTPException(status_code=422, detail="Could not process the uploaded file (invalid or corrupted media)")
         except Exception as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            logger.exception("Unexpected error during acoustic analysis")
+            raise HTTPException(status_code=500, detail="Internal error during audio analysis")
+
+        if not result["success"]:
+            raise HTTPException(status_code=422, detail=result["error"])
 
     create_acoustic_metric(
         db=db, 
