@@ -1,7 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from db.models import Athlete, Session as SessionModel, AcousticMetric, VerticalMetric, HorizontalMetric
-from datetime import datetime, date
 
 
 def get_athlete(db: Session) -> Athlete | None:
