@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes.acoustic import router as acoustic_router
 from api.routes.vertical import router as vertical_router
 from api.routes.sessions import router as sessions_router
+from api.routes.horizontal import router as horizontal_router
 from db.database import create_tables, SessionLocal, get_db
 from db.crud import get_athlete, create_athlete
 from contextlib import asynccontextmanager
@@ -37,6 +38,7 @@ app.add_middleware(
 
 app.include_router(acoustic_router, prefix="/api")
 app.include_router(vertical_router, prefix="/api")
+app.include_router(horizontal_router, prefix="/api")
 app.include_router(sessions_router, prefix="/api")
 
 @app.get("/health")

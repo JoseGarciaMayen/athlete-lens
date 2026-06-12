@@ -56,3 +56,11 @@ class VerticalMetric(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("Session", back_populates="vertical_metrics")
+
+class HorizontalMetric(Base):
+    __tablename__ = "horizontal_metric"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(Integer, ForeignKey("session.id"), nullable=False)
+    jump_distance_cm = Column(Float)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

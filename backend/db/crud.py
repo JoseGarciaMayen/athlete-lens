@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from db.models import Athlete, Session as SessionModel, AcousticMetric, VerticalMetric
+from db.models import Athlete, Session as SessionModel, AcousticMetric, VerticalMetric, HorizontalMetric
 from datetime import datetime, date
 
 
@@ -69,6 +69,16 @@ def create_vertical_metric(db: Session, session_id: int, jump_height_cm: float, 
         fps_used = fps_used,
         takeoff_frame = takeoff_frame,
         landing_frame = landing_frame
+    )
+    db.add(metric)
+    db.commit()
+    db.refresh(metric)
+    return metric
+
+def create_horizontal_metric(db: Session, session_id: int, jump_distance_cm: float) -> HorizontalMetric:
+    metric = HorizontalMetric(
+        session_id=session_id,
+        jump_distance_cm =jump_distance_cm
     )
     db.add(metric)
     db.commit()
