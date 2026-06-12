@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.acoustic import router as acoustic_router
+from api.routes.vertical import router as vertical_router
 from api.routes.sessions import router as sessions_router
 from db.database import create_tables
 from contextlib import asynccontextmanager
@@ -28,6 +29,7 @@ app.add_middleware(
 )
 
 app.include_router(acoustic_router, prefix="/api")
+app.include_router(vertical_router, prefix="/api")
 app.include_router(sessions_router, prefix="/api")
 
 @app.get("/health")
