@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import Upload from "./pages/Upload";
 import Dashboard from "./pages/Dashboard";
+import History from "./pages/History"
 
 function App() {
   const navLinkClass = ({ isActive }) =>
@@ -23,6 +24,9 @@ function App() {
               <NavLink to="/upload" className={navLinkClass}>
                 Upload Session
               </NavLink>
+              <NavLink to="/history" className={navLinkClass}>
+                History
+              </NavLink>
             </nav>
           </div>
         </header>
@@ -32,6 +36,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/history" element={<History />} />
           </Routes>
         </main>
 
