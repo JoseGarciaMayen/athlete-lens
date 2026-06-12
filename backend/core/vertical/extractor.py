@@ -27,7 +27,7 @@ def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO) -> dict:
     Tracks ankles vertical position during the jump
     """
     ankle_y = []
-    
+
     while True:
         ret, frame = cap.read() # ret indicates if read was successful
         if not ret:
@@ -35,9 +35,20 @@ def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO) -> dict:
 
         results = model(frame, verbose=False, device="cpu") # gpu not needed
 
-        if results[0].keypoints is not None and len(results[0].keypoints.xy) > 0:
+        has_detection = results[0].keypoints is not None and len(results[0].keypoints.xy) > 0
+
+        valid_ankles = False
+        if has_detection:
             keypoints = results[0].keypoints.xy[0]
-            ankle_y.append((float(keypoints[15][1])+float(keypoints[16][1]))/2)
+            left_ankle = keypoints[15]
+            right_ankle = keypoints[16]
+
+            left_valid = not (left_ankle[0] == 0 and left_ankle[1] == 0)
+            right_valid = not (right_ankle[0] == 0 and right_ankle[1] == 0)
+            valid_ankles = left_valid and right_valid
+
+        if valid_ankles:
+            ankle_y.append((float(left_ankle[1]) + float(right_ankle[1])) / 2)
         elif len(ankle_y) > 0:
             ankle_y.append(ankle_y[-1])
         else:
