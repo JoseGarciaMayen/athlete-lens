@@ -50,13 +50,22 @@ def compute_time_delta(events: list[int], sr: int, hop_length: int = 512) -> flo
     Returns None if fewer than two events are detected.
     """
     if len(events) < 2:
-        return None
+        return {
+            "success": False,
+            "error": "Not enough events detected, try lowering the threshold",
+        }
     if len(events) > 2:
-        raise ValueError("Too many events detected, try increasing the threshold")
+        return {
+            "success": False,
+            "error": "Too many events detected, try increasing the threshold",
+        }
     
     frame_delta = events[1] - events[0] # frames between event[0] and event[1]
     time_delta_seconds = (frame_delta * hop_length) / sr # seconds between event[0] and event[1]
-    return time_delta_seconds * 1000 # to milliseconds
+    return {
+        "success": True,
+        "time_delta_ms": time_delta_seconds * 1000, # to milliseconds
+    }
 
 def analyze(file_path: str, threshold_ratio: float = 0.3, hop_length: int = 512) -> dict:
     """
@@ -81,30 +90,23 @@ def analyze(file_path: str, threshold_ratio: float = 0.3, hop_length: int = 512)
             os.remove(temp_audio_path)
 
     energy = compute_energy(y, hop_length=hop_length)
-    try:
-        events = detect_events(energy, threshold_ratio)
-        delta = compute_time_delta(events, sr, hop_length=hop_length)
+    events = detect_events(energy, threshold_ratio)
+    delta_result = compute_time_delta(events, sr, hop_length=hop_length)
 
-    except ValueError as e:
+    if not delta_result["success"]:
         return {
             "success": False,
-            "error": str(e),
+            "error": delta_result["error"],
             "events_detected": len(events)
         }
-    
-    if delta is None:
-        return {
-            "success": False,
-            "error": "Not enough events detected, try lowering the threshold",
-            "events_detected": len(events)
-        }
+
     timestamps_ms = []
     for event in events:
         timestamps_ms.append((event * hop_length / sr) * 1000)
 
     return {
         "success": True,
-        "time_delta_ms": delta,
+        "time_delta_ms": delta_result["time_delta_ms"],
         "events_detected": len(events),
         "timestamps_ms": timestamps_ms
     }
