@@ -1,19 +1,18 @@
 import pytest
 from fastapi.testclient import TestClient
 from api.main import app
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from db.models import Base
 from db.database import get_db
 from db.crud import create_athlete
 from db.models import AcousticMetric
 
 
-basic_client = TestClient(app)
+def test_analyze_acoustic_returns_success(client, db_session):
+    create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
-def test_analyze_acoustic_returns_success():
     with open("tests/core/acoustic/fixtures/video.wav", "rb") as f:
-        response = basic_client.post(
+        response = client.post(
             "/api/analyze/acoustic",
             data={"session_date": "2026-06-09"},
             files={"file": ("audio.wav", f, "audio/wav")}
@@ -26,8 +25,9 @@ def test_analyze_acoustic_returns_success():
     assert data["events_detected"] == 2
     assert len(data["timestamps_ms"]) == 2
 
-def test_analyze_acoustic_returns_422_on_empty_file():
-    response = basic_client.post(
+
+def test_analyze_acoustic_returns_422_on_empty_file(client, db_session):
+    response = client.post(
         "/api/analyze/acoustic",
         data={"session_date": "2026-06-09"},
         files={"file": ("empty.wav", b"", "audio/wav")}
