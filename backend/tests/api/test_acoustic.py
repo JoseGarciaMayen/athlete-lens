@@ -8,6 +8,7 @@ from db.database import get_db
 from db.crud import create_athlete
 from db.models import AcousticMetric
 
+
 basic_client = TestClient(app)
 
 def test_analyze_acoustic_returns_success():
@@ -25,7 +26,7 @@ def test_analyze_acoustic_returns_success():
     assert data["events_detected"] == 2
     assert len(data["timestamps_ms"]) == 2
 
-def test_analyze_acoustic_returns_400_on_empty_file():
+def test_analyze_acoustic_returns_422_on_empty_file():
     response = basic_client.post(
         "/api/analyze/acoustic",
         data={"session_date": "2026-06-09"},
