@@ -1,7 +1,7 @@
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from db.crud import get_athlete, update_athlete, get_sessions, create_session
+from db.crud import get_athlete, update_athlete, get_sessions, create_session, get_best_vertical_per_session, get_best_horizontal_per_session, get_best_sprint_per_session
 from db.database import get_db
 from api.schemas import AthleteUpdate, SessionCreate
 
@@ -35,3 +35,17 @@ def post_session_profile(data: SessionCreate, db: Session = Depends(get_db)):
 def get_sessions_profile(db:Session = Depends(get_db)):
     sessions = get_sessions(db=db)
     return sessions
+
+@router.get("/dashboard")
+def get_dashboard(db: Session = Depends(get_db)):
+    vertical = get_best_vertical_per_session(db)
+    horizontal = get_best_horizontal_per_session(db)
+    sprint_30 = get_best_sprint_per_session(db, distance_m=30)
+    sprint_60 = get_best_sprint_per_session(db, distance_m=60)
+
+    return {
+        "vertical_jump": [{"date": d, "value": v} for d, v in vertical],
+        "sprint_30m": [{"date": d, "value": v} for d, v in sprint_30],
+        "sprint_60m": [{"date": d, "value": v} for d, v in sprint_60],
+        "horizontal_jump": [{"date": d, "value": v} for d, v in horizontal],
+    }

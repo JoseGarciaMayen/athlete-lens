@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from db.models import Athlete, Session as SessionModel, AcousticMetric, VerticalMetric, HorizontalMetric
 from datetime import datetime, date
@@ -84,3 +85,42 @@ def create_horizontal_metric(db: Session, session_id: int, jump_distance_cm: flo
     db.commit()
     db.refresh(metric)
     return metric
+
+def get_best_vertical_per_session(db: Session) -> list:
+    return (
+        db.query(
+            SessionModel.date,
+            func.max(VerticalMetric.jump_height_cm).label("value")
+        )
+        .join(VerticalMetric, VerticalMetric.session_id == SessionModel.id)
+        .group_by(SessionModel.date)
+        .order_by(SessionModel.date)
+        .all()
+    )
+
+
+def get_best_horizontal_per_session(db: Session) -> list:
+    return (
+        db.query(
+            SessionModel.date,
+            func.max(HorizontalMetric.jump_distance_cm).label("value")
+        )
+        .join(HorizontalMetric, HorizontalMetric.session_id == SessionModel.id)
+        .group_by(SessionModel.date)
+        .order_by(SessionModel.date)
+        .all()
+    )
+
+
+def get_best_sprint_per_session(db: Session, distance_m: int) -> list:
+    return (
+        db.query(
+            SessionModel.date,
+            func.min(AcousticMetric.time_delta_ms).label("value")
+        )
+        .join(AcousticMetric, AcousticMetric.session_id == SessionModel.id)
+        .filter(AcousticMetric.distance_m == distance_m)
+        .group_by(SessionModel.date)
+        .order_by(SessionModel.date)
+        .all()
+    )
