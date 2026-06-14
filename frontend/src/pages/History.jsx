@@ -98,7 +98,7 @@ function History() {
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto p-6 mt-8 text-center">
-                <p className="text-gray-500 animate-pulse">Loading history...</p>
+                <p className="text-gray-500 dark:text-gray-400 animate-pulse">Loading history...</p>
             </div>
         );
     }
@@ -111,7 +111,7 @@ function History() {
     return (
         <div className="max-w-4xl mx-auto p-6 mt-8">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">History</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">History</h1>
                 <button
                     onClick={() => downloadCsv(metrics)}
                     disabled={metrics.length === 0}
@@ -122,20 +122,20 @@ function History() {
             </div>
 
             {error && (
-                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
                     {error}
                 </div>
             )}
 
             {metrics.length === 0 ? (
-                <div className="p-6 text-center text-gray-400 bg-white border border-dashed rounded-lg">
+                <div className="p-6 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 border border-dashed dark:border-gray-700 rounded-lg">
                     No entries yet
                 </div>
             ) : (
                 <>
-                    <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50 text-gray-600 text-left">
+                            <thead className="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-left">
                                 <tr>
                                     <th className="px-4 py-2">Date</th>
                                     <th className="px-4 py-2">Type</th>
@@ -146,15 +146,15 @@ function History() {
                             </thead>
                             <tbody>
                                 {pageMetrics.map((metric) => (
-                                    <tr key={`${metric.type}-${metric.id}`} className="border-t">
+                                    <tr key={`${metric.type}-${metric.id}`} className="border-t border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
                                         <td className="px-4 py-2">{metric.date}</td>
                                         <td className="px-4 py-2">{TYPE_LABELS[metric.type]}</td>
                                         <td className="px-4 py-2">{formatValue(metric)}</td>
-                                        <td className="px-4 py-2 text-gray-500">{metric.notes || "—"}</td>
+                                        <td className="px-4 py-2 text-gray-500 dark:text-gray-400">{metric.notes || "—"}</td>
                                         <td className="px-4 py-2 text-right">
                                             <button
                                                 onClick={() => handleDelete(metric)}
-                                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
                                             >
                                                 Delete
                                             </button>
@@ -170,17 +170,17 @@ function History() {
                             <button
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1 rounded border disabled:opacity-50"
+                                className="px-3 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                             >
                                 Previous
                             </button>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
                                 Page {currentPage} of {totalPages}
                             </span>
                             <button
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1 rounded border disabled:opacity-50"
+                                className="px-3 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                             >
                                 Next
                             </button>

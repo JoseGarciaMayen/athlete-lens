@@ -208,28 +208,28 @@ function UploadVertical() {
                 </div>
             )}
 
-            <h2 className="text-xl font-bold mb-4">Vertical Jump</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Vertical Jump</h2>
 
             <div className="flex flex-col gap-4">
                 <div>
-                    <label className="block mb-1 font-medium">Date</label>
+                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Date</label>
                     <input
                         type="date"
                         required
                         value={sessionDate}
                         onChange={(e) => setSessionDate(e.target.value)}
                         disabled={isFormDisabled}
-                        className="block w-full border rounded px-2 py-1 disabled:opacity-50"
+                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
                     />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium">Preparation time (s)</label>
+                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Preparation time (s)</label>
                     <div className="flex gap-2 mb-2">
                         {["5", "10", "15"].map((s) => (
                             <button key={s} type="button" disabled={isFormDisabled}
                                 onClick={() => setPreparationS(s)}
-                                className={`px-3 py-1 rounded border disabled:opacity-50 ${preparationS === s ? "bg-blue-600 text-white" : "bg-white"}`}>
+                                className={`px-3 py-1 rounded border disabled:opacity-50 ${preparationS === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200"}`}>
                                 {s}s
                             </button>
                         ))}
@@ -237,16 +237,16 @@ function UploadVertical() {
                     <input type="number" min="1" value={preparationS}
                         onChange={(e) => setPreparationS(e.target.value)}
                         disabled={isFormDisabled} placeholder="Custom time"
-                        className="block w-full border rounded px-2 py-1 disabled:opacity-50" />
+                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium">Recording duration (s)</label>
+                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Recording duration (s)</label>
                     <div className="flex gap-2 mb-2">
                         {["5", "7", "10"].map((s) => (
                             <button key={s} type="button" disabled={isFormDisabled}
                                 onClick={() => setRecordingS(s)}
-                                className={`px-3 py-1 rounded border disabled:opacity-50 ${recordingS === s ? "bg-blue-600 text-white" : "bg-white"}`}>
+                                className={`px-3 py-1 rounded border disabled:opacity-50 ${recordingS === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200"}`}>
                                 {s}s
                             </button>
                         ))}
@@ -254,25 +254,25 @@ function UploadVertical() {
                     <input type="number" min="1" value={recordingS}
                         onChange={(e) => setRecordingS(e.target.value)}
                         disabled={isFormDisabled} placeholder="Custom duration"
-                        className="block w-full border rounded px-2 py-1 disabled:opacity-50" />
+                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium">Notes (optional)</label>
+                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Notes (optional)</label>
                     <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
                         disabled={isFormDisabled}
-                        className="block w-full border rounded px-2 py-1 disabled:opacity-50" />
+                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 {phase === "idle" && (
-                    <div className="p-4 bg-gray-50 border rounded space-y-2">
-                        <label className="block font-medium text-sm text-gray-600">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded space-y-2">
+                        <label className="block font-medium text-sm text-gray-600 dark:text-gray-400">
                             Manual entry (optional — skip countdown)
                         </label>
                         <input type="number" step="any" min="0" value={manualHeightCm}
                             onChange={(e) => setManualHeightCm(e.target.value)}
                             placeholder="Jump height (cm)"
-                            className="block w-full border rounded px-2 py-1" />
+                            className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
                         {manualHeightCm && (
                             <button type="button" onClick={async () => {
                                 const validationError = validate();
@@ -308,30 +308,30 @@ function UploadVertical() {
 
                 {phase === "uploading" && (
                     <div className="text-center py-6">
-                        <p className="text-gray-500 animate-pulse">Uploading and analyzing...</p>
+                        <p className="text-gray-500 dark:text-gray-400 animate-pulse">Uploading and analyzing...</p>
                     </div>
                 )}
 
                 {(phase === "done" || phase === "error") && (
                     <button type="button" onClick={handleReset}
-                        className="bg-gray-200 text-gray-700 rounded px-4 py-2">
+                        className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded px-4 py-2">
                         New jump
                     </button>
                 )}
             </div>
 
             {error && (
-                <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
+                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">{error}</div>
             )}
 
             {result && (
-                <div className="mt-4 p-3 bg-green-100 text-green-800 rounded">
+                <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded">
                     <p className="font-semibold">Height: {Number(result.jump_height_cm).toFixed(1)} cm</p>
                     {result.flight_time_ms != null && (
                         <p>Flight time: {Number(result.flight_time_ms).toFixed(0)} ms</p>
                     )}
                     {result.takeoff_frame != null && (
-                        <p className="text-sm text-green-700 mt-1">
+                        <p className="text-sm text-green-700 dark:text-green-400 mt-1">
                             Frames: {result.takeoff_frame} → {result.landing_frame} ({result.fps_used} fps)
                         </p>
                     )}

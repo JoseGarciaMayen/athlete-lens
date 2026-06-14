@@ -7,6 +7,14 @@
   <title>Athlete Lens</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#1e3a5f" />
+  <script>
+    (function () {
+      var stored = localStorage.getItem('theme');
+      if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
 </head>
 
 <body>
