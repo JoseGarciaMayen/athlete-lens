@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,6 +11,9 @@ from db.database import create_tables, SessionLocal, get_db
 from db.crud import get_athlete, create_athlete
 from contextlib import asynccontextmanager
 from ultralytics import YOLO
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../frontend/.env"))
 
 @asynccontextmanager
 async def lifespan(app):
@@ -28,9 +33,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", _frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
