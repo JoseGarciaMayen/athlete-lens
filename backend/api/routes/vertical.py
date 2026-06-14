@@ -37,6 +37,10 @@ def analyze_vertical(
     session = get_or_create_session(db=db, athlete_id=athlete.id, date=session_date_parsed, notes=notes)
 
     if file is not None:
+        MAX_BYTES = 100 * 1024 * 1024  # 100 MB
+        if file.size and file.size > MAX_BYTES:
+            raise HTTPException(status_code=413, detail="File too large (max 100 MB)")
+
         contents = file.file.read()
 
         if not contents:
