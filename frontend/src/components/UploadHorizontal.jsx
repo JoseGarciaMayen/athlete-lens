@@ -1,7 +1,9 @@
 import { useState } from "react";
 
 function UploadHorizontal() {
-    const [sessionDate, setSessionDate] = useState("");
+    const [sessionDate, setSessionDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
     const [distanceCm, setDistanceCm] = useState("");
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);

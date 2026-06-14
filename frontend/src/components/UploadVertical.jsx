@@ -2,7 +2,9 @@ import { useState } from "react";
 
 function UploadVertical() {
     const [file, setFile] = useState(null);
-    const [sessionDate, setSessionDate] = useState("");
+    const [sessionDate, setSessionDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
     const [notes, setNotes] = useState("");
     const [manualHeightCm, setManualHeightCm] = useState("");
     const [loading, setLoading] = useState(false);

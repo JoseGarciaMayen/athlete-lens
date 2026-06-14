@@ -23,7 +23,9 @@ function playCountdownBeeps(audioCtx) {
 }
 
 function UploadSprint() {
-    const [sessionDate, setSessionDate] = useState("");
+    const [sessionDate, setSessionDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
     const [notes, setNotes] = useState("");
     const [distanceM, setDistanceM] = useState("");
     const [manualTimeS, setManualTimeS] = useState("");
