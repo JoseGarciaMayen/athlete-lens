@@ -32,11 +32,15 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, fps: float, model:
     """
     Iterate frames until the athlete's hip center crosses the horizontal midpoint (width / 2).
 
+    Direction is inferred from the first frame where the athlete is detected:
+    if hip_cx <= midpoint_x the athlete moves left-to-right, otherwise right-to-left.
+
     Uses hip keypoints 11 (left hip) and 12 (right hip) when both are visible.
     Falls back to bounding box center when hip keypoints are missing.
     Stops as soon as the crossing is detected (early exit).
     """
     midpoint_x = width / 2
+    direction  = None  # "ltr" | "rtl"
 
     frame_idx = 0
     while True:
@@ -52,7 +56,6 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, fps: float, model:
             confs    = results[0].boxes.conf.tolist()
             best_idx = confs.index(max(confs))
 
-            # Try hip keypoints first
             hip_cx = None
             if results[0].keypoints is not None and len(results[0].keypoints.xy) > best_idx:
                 kps       = results[0].keypoints.xy[best_idx]
@@ -65,13 +68,19 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, fps: float, model:
                 if left_valid and right_valid:
                     hip_cx = (left_hip[0] + right_hip[0]) / 2
 
-            # Fall back to bounding box center
             if hip_cx is None:
                 box           = results[0].boxes.xyxy[best_idx].tolist()
                 x1, _, x2, _ = box
                 hip_cx        = (x1 + x2) / 2
 
-            if hip_cx > midpoint_x:
+            # Infer direction from first detection
+            if direction is None:
+                direction = "ltr" if hip_cx <= midpoint_x else "rtl"
+
+            crossed = (direction == "ltr" and hip_cx > midpoint_x) or \
+                      (direction == "rtl" and hip_cx < midpoint_x)
+
+            if crossed:
                 return {
                     "success":        True,
                     "crossing_frame": frame_idx,
