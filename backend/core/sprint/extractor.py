@@ -2,7 +2,7 @@ import cv2
 import ultralytics
 
 
-def load_video(video_path: str) -> dict:
+def load_video(video_path: str, fps_override: float | None = None) -> dict:
     """
     Load video file and return cap and metadata.
     """
@@ -13,10 +13,9 @@ def load_video(video_path: str) -> dict:
 
     fps          = cap.get(cv2.CAP_PROP_FPS)
 
-    if fps <= 0 or fps > 240:
+    if not fps_override and (video_result["fps"] <= 0 or video_result["fps"] > 240):
         cap.release()
-        return {"success": False,
-        "error": f"Invalid FPS read from video metadata ({fps}). Try recording at a fixed frame rate."}
+        return {"success": False, "error": f"Invalid FPS read from video metadata ({fps})."}
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -107,13 +106,15 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
     Orchestrates the full sprint analysis pipeline.
     Loads video, iterates frames, detects the finish crossing and computes sprint time.
     """
-    video_result = load_video(video_path)
+    video_result = load_video(video_path, fps_override)
 
     if not video_result["success"]:
         return {"success": False, "error": video_result["error"]}
 
     cap   = video_result["cap"]
-    fps   = fps_override if fps_override else video_result["fps"]
+    print(f"analyze called with fps_override: {fps_override}")
+    fps = fps_override if fps_override else video_result["fps"]
+    print(f"fps used: {fps}")
     width = video_result["width"]
 
     crossing_result = detect_finish_crossing(cap, width, fps, model, device)
