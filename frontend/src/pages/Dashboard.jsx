@@ -22,7 +22,7 @@ const MetricChart = ({ title, data, color, unit, decimals = 2, isDark }) => {
             {data && data.length > 0 ? (
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                        <LineChart data={data} margin={{ top: 5, right: 30, bottom: 5, left: -20 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                             <XAxis
                                 dataKey="date"
@@ -31,7 +31,8 @@ const MetricChart = ({ title, data, color, unit, decimals = 2, isDark }) => {
                                 tickLine={false}
                             />
                             <YAxis
-                                tick={{ fontSize: 12, fill: tickColor }}
+                                domain={['auto', 'auto']}
+                                tick={{ fontSize: 12, fill: '#6b7280' }}
                                 axisLine={false}
                                 tickLine={false}
                             />
