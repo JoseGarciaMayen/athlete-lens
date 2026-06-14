@@ -74,17 +74,8 @@ function Dashboard() {
                 }
                 const result = await response.json();
 
-                const formattedData = {
-                    ...result,
-                    sprint_30m: result.sprint_30m?.map(item => ({
-                        ...item,
-                        value: item.value / 1000
-                    })) || [],
-                    sprint_60m: result.sprint_60m?.map(item => ({
-                        ...item,
-                        value: item.value / 1000
-                    })) || []
-                };
+                const formattedData = result;   // sprint_30m y sprint_60m ya vienen en segundos
+                setData(formattedData);
 
                 setData(formattedData);
             } catch (err) {
