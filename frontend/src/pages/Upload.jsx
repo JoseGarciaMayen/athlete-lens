@@ -1,6 +1,6 @@
 import { useState } from "react";
 import UploadVertical from "../components/UploadVertical";
-import UploadAcoustic from "../components/UploadAcoustic";
+import UploadSprint from "../components/UploadSprint";
 import UploadHorizontal from "../components/UploadHorizontal";
 
 function Upload() {
@@ -27,14 +27,14 @@ function Upload() {
                         }`}
                     onClick={() => setActiveTab("horizontal")}
                 >
-                    Horizontal jump
+                    Horizontal Jump
                 </button>
                 <button
-                    className={`flex-1 py-2 text-center text-sm font-medium border-b-2 transition-colors ${activeTab === "acoustic"
+                    className={`flex-1 py-2 text-center text-sm font-medium border-b-2 transition-colors ${activeTab === "sprint"
                         ? "border-blue-600 text-blue-600"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         }`}
-                    onClick={() => setActiveTab("acoustic")}
+                    onClick={() => setActiveTab("sprint")}
                 >
                     Sprint
                 </button>
@@ -42,7 +42,7 @@ function Upload() {
 
             <div className="mt-4">
                 {activeTab === "vertical" && <UploadVertical />}
-                {activeTab === "acoustic" && <UploadAcoustic />}
+                {activeTab === "sprint" && <UploadSprint />}
                 {activeTab === "horizontal" && <UploadHorizontal />}
             </div>
         </div>

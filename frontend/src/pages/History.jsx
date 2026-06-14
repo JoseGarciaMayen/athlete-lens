@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 
 const TYPE_LABELS = {
     vertical: "Vertical Jump",
-    acoustic: "Sprint",
+    sprint: "Sprint",
     horizontal: "Horizontal Jump",
 };
 
 const PAGE_SIZE = 15;
 
 function formatValue(metric) {
-    if (metric.type === "acoustic") {
-        return `${(metric.value / 1000).toFixed(3)} s`;
+    if (metric.type === "sprint") {
+        const distance = metric.distance_m ? ` (${metric.distance_m}m)` : "";
+        return `${Number(metric.value).toFixed(3)} s${distance}`;
     }
     return `${Number(metric.value).toFixed(1)} cm`;
 }
