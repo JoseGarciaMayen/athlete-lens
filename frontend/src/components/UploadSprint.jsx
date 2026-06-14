@@ -9,14 +9,11 @@ function playCountdownBeeps(audioCtx) {
         const startTime = audioCtx.currentTime + i * BEEP_GAP;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-
         osc.type = "square";
         osc.frequency.value = BEEP_FREQ;
         gain.gain.value = 1.0;
-
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         osc.start(startTime);
         osc.stop(startTime + BEEP_DURATION);
     }
@@ -28,6 +25,8 @@ function UploadSprint() {
     const [distanceM, setDistanceM] = useState("");
     const [manualTimeS, setManualTimeS] = useState("");
     const [preparationS, setPreparationS] = useState("");
+    const [inputMode, setInputMode] = useState("record"); // "record" | "upload"
+    const [uploadFile, setUploadFile] = useState(null);
 
     const [phase, setPhase] = useState("idle");
     const [countdown, setCountdown] = useState(null);
@@ -76,11 +75,9 @@ function UploadSprint() {
         setCountdown(prepSeconds);
 
         let remaining = prepSeconds;
-
         timerRef.current = setInterval(() => {
             remaining -= 1;
             setCountdown(remaining);
-
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
                 startRecording(stream);
@@ -94,7 +91,6 @@ function UploadSprint() {
         }
         playCountdownBeeps(audioCtxRef.current);
 
-        // Read FPS from camera track and store in ref for uploadVideo
         const videoTrack = stream.getVideoTracks()[0];
         fpsRef.current = videoTrack.getSettings().frameRate || 30;
 
@@ -102,13 +98,9 @@ function UploadSprint() {
 
         chunksRef.current = [];
         const recorder = new MediaRecorder(stream);
-
-        recorder.ondataavailable = (e) => {
-            if (e.data.size > 0) chunksRef.current.push(e.data);
-        };
-
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
         recorder.onstop = () => {
-            stream.getTracks().forEach((track) => track.stop());
+            stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
             uploadVideo();
         };
@@ -125,14 +117,15 @@ function UploadSprint() {
         }
     }
 
-    async function uploadVideo() {
-        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+    async function uploadVideo(fileOverride) {
+        const file = fileOverride || new Blob(chunksRef.current, { type: "video/webm" });
+        const filename = fileOverride ? fileOverride.name : "sprint.webm";
 
         const formData = new FormData();
         formData.append("session_date", sessionDate);
         formData.append("distance_m", distanceM);
-        formData.append("file", blob, "sprint.webm");
-        formData.append("fps", fpsRef.current);
+        formData.append("file", file, filename);
+        if (fpsRef.current) formData.append("fps", fpsRef.current);
         if (notes) formData.append("notes", notes);
 
         try {
@@ -140,36 +133,36 @@ function UploadSprint() {
                 `${import.meta.env.VITE_API_URL}/api/analyze/sprint`,
                 { method: "POST", body: formData }
             );
-
             const data = await response.json();
-
-            if (!response.ok) {
-                setError(data.detail || "Unknown error");
-                setPhase("error");
-            } else {
-                setResult(data);
-                setPhase("done");
-            }
+            if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
+            else { setResult(data); setPhase("done"); }
         } catch {
             setError("Could not connect to the server");
             setPhase("error");
         }
     }
 
+    async function handleUploadSubmit() {
+        const validationError = validate();
+        if (validationError) { setError(validationError); return; }
+        if (!uploadFile) { setError("Please select a video file"); return; }
+        setError(null);
+        setPhase("uploading");
+        await uploadVideo(uploadFile);
+    }
+
     function handleReset() {
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
         }
         clearInterval(timerRef.current);
-        if (audioCtxRef.current) {
-            audioCtxRef.current.close();
-            audioCtxRef.current = null;
-        }
+        if (audioCtxRef.current) { audioCtxRef.current.close(); audioCtxRef.current = null; }
         setPhase("idle");
         setResult(null);
         setError(null);
         setCountdown(null);
+        setUploadFile(null);
         chunksRef.current = [];
         mediaRecorderRef.current = null;
         fpsRef.current = null;
@@ -177,19 +170,15 @@ function UploadSprint() {
 
     const isFormDisabled = phase !== "idle";
     const showFullscreen = phase === "preparing" || phase === "recording";
+    const btnBase = "flex-1 py-2 text-sm font-medium rounded border transition-colors";
+    const btnActive = "bg-blue-600 text-white border-blue-600";
+    const btnInactive = "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600";
 
     return (
         <>
             {showFullscreen && (
                 <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover"
-                    />
-
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         {phase === "preparing" && (
                             <>
@@ -197,23 +186,19 @@ function UploadSprint() {
                                 <p className="text-white text-9xl font-bold drop-shadow">{countdown}</p>
                             </>
                         )}
-
                         {phase === "recording" && (
-                            <div className="absolute bottom-16 w-full flex justify-center pointer-events-auto">
-                                <button
-                                    onClick={handleStopRecording}
-                                    className="bg-red-600 text-white rounded-full px-12 py-6 text-2xl font-bold shadow-lg"
-                                >
-                                    Stop
-                                </button>
-                            </div>
-                        )}
-
-                        {phase === "recording" && (
-                            <div className="absolute top-10 flex items-center gap-2">
-                                <span className="w-4 h-4 rounded-full bg-red-500 animate-pulse" />
-                                <span className="text-white text-xl font-semibold drop-shadow">Recording</span>
-                            </div>
+                            <>
+                                <div className="absolute top-10 flex items-center gap-2">
+                                    <span className="w-4 h-4 rounded-full bg-red-500 animate-pulse" />
+                                    <span className="text-white text-xl font-semibold drop-shadow">Recording</span>
+                                </div>
+                                <div className="absolute bottom-16 w-full flex justify-center pointer-events-auto">
+                                    <button onClick={handleStopRecording}
+                                        className="bg-red-600 text-white rounded-full px-12 py-6 text-2xl font-bold shadow-lg">
+                                        Stop
+                                    </button>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
@@ -225,8 +210,7 @@ function UploadSprint() {
                 <div>
                     <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Date</label>
                     <input type="date" required value={sessionDate}
-                        onChange={(e) => setSessionDate(e.target.value)}
-                        disabled={isFormDisabled}
+                        onChange={(e) => setSessionDate(e.target.value)} disabled={isFormDisabled}
                         className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
@@ -234,51 +218,81 @@ function UploadSprint() {
                     <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Distance (m)</label>
                     <div className="flex gap-2 mb-2">
                         {["30", "60"].map((d) => (
-                            <button key={d} type="button" disabled={isFormDisabled}
-                                onClick={() => setDistanceM(d)}
-                                className={`px-3 py-1 rounded border disabled:opacity-50 ${distanceM === d ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200"}`}>
+                            <button key={d} type="button" disabled={isFormDisabled} onClick={() => setDistanceM(d)}
+                                className={`px-3 py-1 rounded border disabled:opacity-50 ${distanceM === d ? btnActive : btnInactive}`}>
                                 {d}m
                             </button>
                         ))}
                     </div>
-                    <input type="number" min="1" value={distanceM}
-                        onChange={(e) => setDistanceM(e.target.value)}
+                    <input type="number" min="1" value={distanceM} onChange={(e) => setDistanceM(e.target.value)}
                         disabled={isFormDisabled} placeholder="Custom distance"
                         className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Preparation time (s)</label>
-                    <div className="flex gap-2 mb-2">
-                        {["15", "30", "45"].map((s) => (
-                            <button key={s} type="button" disabled={isFormDisabled}
-                                onClick={() => setPreparationS(s)}
-                                className={`px-3 py-1 rounded border disabled:opacity-50 ${preparationS === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200"}`}>
-                                {s}s
-                            </button>
-                        ))}
-                    </div>
-                    <input type="number" min="1" value={preparationS}
-                        onChange={(e) => setPreparationS(e.target.value)}
-                        disabled={isFormDisabled} placeholder="Custom time"
-                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
-                </div>
-
-                <div>
                     <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Notes (optional)</label>
-                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-                        disabled={isFormDisabled}
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} disabled={isFormDisabled}
                         className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 {phase === "idle" && (
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded space-y-2">
-                        <label className="block font-medium text-sm text-gray-600 dark:text-gray-400">
-                            Manual entry (optional — skip countdown)
-                        </label>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={() => setInputMode("record")}
+                            className={`${btnBase} ${inputMode === "record" ? btnActive : btnInactive}`}>
+                            Record
+                        </button>
+                        <button type="button" onClick={() => setInputMode("upload")}
+                            className={`${btnBase} ${inputMode === "upload" ? btnActive : btnInactive}`}>
+                            Upload video
+                        </button>
+                        <button type="button" onClick={() => setInputMode("manual")}
+                            className={`${btnBase} ${inputMode === "manual" ? btnActive : btnInactive}`}>
+                            Manual
+                        </button>
+                    </div>
+                )}
+
+                {phase === "idle" && inputMode === "record" && (
+                    <>
+                        <div>
+                            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Preparation time (s)</label>
+                            <div className="flex gap-2 mb-2">
+                                {["15", "30", "45"].map((s) => (
+                                    <button key={s} type="button" onClick={() => setPreparationS(s)}
+                                        className={`px-3 py-1 rounded border ${preparationS === s ? btnActive : btnInactive}`}>
+                                        {s}s
+                                    </button>
+                                ))}
+                            </div>
+                            <input type="number" min="1" value={preparationS}
+                                onChange={(e) => setPreparationS(e.target.value)} placeholder="Custom time"
+                                className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                        </div>
+                        <button type="button" onClick={handleStartCountdown}
+                            className="bg-blue-600 text-white rounded px-4 py-2">
+                            Start countdown
+                        </button>
+                    </>
+                )}
+
+                {phase === "idle" && inputMode === "upload" && (
+                    <>
+                        <div>
+                            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Video file</label>
+                            <input type="file" accept="video/*" onChange={(e) => setUploadFile(e.target.files[0])}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                        </div>
+                        <button type="button" onClick={handleUploadSubmit}
+                            className="bg-blue-600 text-white rounded px-4 py-2">
+                            Analyze
+                        </button>
+                    </>
+                )}
+
+                {phase === "idle" && inputMode === "manual" && (
+                    <>
                         <input type="number" step="any" min="0" value={manualTimeS}
-                            onChange={(e) => setManualTimeS(e.target.value)}
-                            placeholder="Sprint time (seconds)"
+                            onChange={(e) => setManualTimeS(e.target.value)} placeholder="Sprint time (seconds)"
                             className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
                         {manualTimeS && (
                             <button type="button" onClick={async () => {
@@ -300,18 +314,11 @@ function UploadSprint() {
                                     if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
                                     else { setResult(data); setPhase("done"); }
                                 } catch { setError("Could not connect to the server"); setPhase("error"); }
-                            }} className="w-full bg-gray-600 text-white rounded px-4 py-2">
+                            }} className="bg-gray-600 text-white rounded px-4 py-2">
                                 Save manually
                             </button>
                         )}
-                    </div>
-                )}
-
-                {phase === "idle" && (
-                    <button type="button" onClick={handleStartCountdown}
-                        className="bg-blue-600 text-white rounded px-4 py-2">
-                        Start countdown
-                    </button>
+                    </>
                 )}
 
                 {phase === "uploading" && (
@@ -328,9 +335,7 @@ function UploadSprint() {
                 )}
             </div>
 
-            {error && (
-                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">{error}</div>
-            )}
+            {error && <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">{error}</div>}
 
             {result && (
                 <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded">

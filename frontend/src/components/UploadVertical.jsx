@@ -6,14 +6,11 @@ const BEEP_DURATION = 0.3;
 function playBeep(audioCtx) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-
     osc.type = "square";
     osc.frequency.value = BEEP_FREQ;
     gain.gain.value = 1.0;
-
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + BEEP_DURATION);
 }
@@ -24,6 +21,8 @@ function UploadVertical() {
     const [manualHeightCm, setManualHeightCm] = useState("");
     const [preparationS, setPreparationS] = useState("");
     const [recordingS, setRecordingS] = useState("");
+    const [inputMode, setInputMode] = useState("record");
+    const [uploadFile, setUploadFile] = useState(null);
 
     const [phase, setPhase] = useState("idle");
     const [countdown, setCountdown] = useState(null);
@@ -75,11 +74,9 @@ function UploadVertical() {
         setCountdown(prepSeconds);
 
         let remaining = prepSeconds;
-
         timerRef.current = setInterval(() => {
             remaining -= 1;
             setCountdown(remaining);
-
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
                 startRecording(recSeconds, stream);
@@ -93,7 +90,6 @@ function UploadVertical() {
         }
         playBeep(audioCtxRef.current);
 
-        // Read FPS from camera track and store in ref for uploadVideo
         const videoTrack = stream.getVideoTracks()[0];
         fpsRef.current = videoTrack.getSettings().frameRate || 30;
 
@@ -101,13 +97,9 @@ function UploadVertical() {
 
         chunksRef.current = [];
         const recorder = new MediaRecorder(stream);
-
-        recorder.ondataavailable = (e) => {
-            if (e.data.size > 0) chunksRef.current.push(e.data);
-        };
-
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
         recorder.onstop = () => {
-            stream.getTracks().forEach((track) => track.stop());
+            stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
             uploadVideo();
         };
@@ -121,7 +113,6 @@ function UploadVertical() {
         timerRef.current = setInterval(() => {
             recRemaining -= 1;
             setRecordingLeft(recRemaining);
-
             if (recRemaining <= 0) {
                 clearInterval(timerRef.current);
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -132,13 +123,14 @@ function UploadVertical() {
         }, 1000);
     }
 
-    async function uploadVideo() {
-        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+    async function uploadVideo(fileOverride) {
+        const file = fileOverride || new Blob(chunksRef.current, { type: "video/webm" });
+        const filename = fileOverride ? fileOverride.name : "vertical.webm";
 
         const formData = new FormData();
         formData.append("session_date", sessionDate);
-        formData.append("file", blob, "vertical.webm");
-        formData.append("fps", fpsRef.current);
+        formData.append("file", file, filename);
+        if (fpsRef.current) formData.append("fps", fpsRef.current);
         if (notes) formData.append("notes", notes);
 
         try {
@@ -146,37 +138,37 @@ function UploadVertical() {
                 `${import.meta.env.VITE_API_URL}/api/analyze/vertical`,
                 { method: "POST", body: formData }
             );
-
             const data = await response.json();
-
-            if (!response.ok) {
-                setError(data.detail || "Unknown error");
-                setPhase("error");
-            } else {
-                setResult(data);
-                setPhase("done");
-            }
+            if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
+            else { setResult(data); setPhase("done"); }
         } catch {
             setError("Could not connect to the server");
             setPhase("error");
         }
     }
 
+    async function handleUploadSubmit() {
+        const validationError = validate();
+        if (validationError) { setError(validationError); return; }
+        if (!uploadFile) { setError("Please select a video file"); return; }
+        setError(null);
+        setPhase("uploading");
+        await uploadVideo(uploadFile);
+    }
+
     function handleReset() {
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
         }
         clearInterval(timerRef.current);
-        if (audioCtxRef.current) {
-            audioCtxRef.current.close();
-            audioCtxRef.current = null;
-        }
+        if (audioCtxRef.current) { audioCtxRef.current.close(); audioCtxRef.current = null; }
         setPhase("idle");
         setResult(null);
         setError(null);
         setCountdown(null);
         setRecordingLeft(null);
+        setUploadFile(null);
         chunksRef.current = [];
         mediaRecorderRef.current = null;
         fpsRef.current = null;
@@ -184,19 +176,15 @@ function UploadVertical() {
 
     const isFormDisabled = phase !== "idle";
     const showFullscreen = phase === "preparing" || phase === "recording";
+    const btnBase = "flex-1 py-2 text-sm font-medium rounded border transition-colors";
+    const btnActive = "bg-blue-600 text-white border-blue-600";
+    const btnInactive = "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600";
 
     return (
         <>
             {showFullscreen && (
                 <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover"
-                    />
-
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         {phase === "preparing" && (
                             <>
@@ -204,7 +192,6 @@ function UploadVertical() {
                                 <p className="text-white text-9xl font-bold drop-shadow">{countdown}</p>
                             </>
                         )}
-
                         {phase === "recording" && (
                             <>
                                 <div className="flex items-center gap-2 mb-4">
@@ -224,60 +211,88 @@ function UploadVertical() {
                 <div>
                     <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Date</label>
                     <input type="date" required value={sessionDate}
-                        onChange={(e) => setSessionDate(e.target.value)}
-                        disabled={isFormDisabled}
-                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
-                </div>
-
-                <div>
-                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Preparation time (s)</label>
-                    <div className="flex gap-2 mb-2">
-                        {["5", "10", "15"].map((s) => (
-                            <button key={s} type="button" disabled={isFormDisabled}
-                                onClick={() => setPreparationS(s)}
-                                className={`px-3 py-1 rounded border disabled:opacity-50 ${preparationS === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200"}`}>
-                                {s}s
-                            </button>
-                        ))}
-                    </div>
-                    <input type="number" min="1" value={preparationS}
-                        onChange={(e) => setPreparationS(e.target.value)}
-                        disabled={isFormDisabled} placeholder="Custom time"
-                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
-                </div>
-
-                <div>
-                    <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Recording duration (s)</label>
-                    <div className="flex gap-2 mb-2">
-                        {["5", "7", "10"].map((s) => (
-                            <button key={s} type="button" disabled={isFormDisabled}
-                                onClick={() => setRecordingS(s)}
-                                className={`px-3 py-1 rounded border disabled:opacity-50 ${recordingS === s ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200"}`}>
-                                {s}s
-                            </button>
-                        ))}
-                    </div>
-                    <input type="number" min="1" value={recordingS}
-                        onChange={(e) => setRecordingS(e.target.value)}
-                        disabled={isFormDisabled} placeholder="Custom duration"
+                        onChange={(e) => setSessionDate(e.target.value)} disabled={isFormDisabled}
                         className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 <div>
                     <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Notes (optional)</label>
-                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-                        disabled={isFormDisabled}
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} disabled={isFormDisabled}
                         className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 {phase === "idle" && (
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded space-y-2">
-                        <label className="block font-medium text-sm text-gray-600 dark:text-gray-400">
-                            Manual entry (optional — skip countdown)
-                        </label>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={() => setInputMode("record")}
+                            className={`${btnBase} ${inputMode === "record" ? btnActive : btnInactive}`}>
+                            Record
+                        </button>
+                        <button type="button" onClick={() => setInputMode("upload")}
+                            className={`${btnBase} ${inputMode === "upload" ? btnActive : btnInactive}`}>
+                            Upload video
+                        </button>
+                        <button type="button" onClick={() => setInputMode("manual")}
+                            className={`${btnBase} ${inputMode === "manual" ? btnActive : btnInactive}`}>
+                            Manual
+                        </button>
+                    </div>
+                )}
+
+                {phase === "idle" && inputMode === "record" && (
+                    <>
+                        <div>
+                            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Preparation time (s)</label>
+                            <div className="flex gap-2 mb-2">
+                                {["5", "10", "15"].map((s) => (
+                                    <button key={s} type="button" onClick={() => setPreparationS(s)}
+                                        className={`px-3 py-1 rounded border ${preparationS === s ? btnActive : btnInactive}`}>
+                                        {s}s
+                                    </button>
+                                ))}
+                            </div>
+                            <input type="number" min="1" value={preparationS}
+                                onChange={(e) => setPreparationS(e.target.value)} placeholder="Custom time"
+                                className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                        </div>
+                        <div>
+                            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Recording duration (s)</label>
+                            <div className="flex gap-2 mb-2">
+                                {["5", "7", "10"].map((s) => (
+                                    <button key={s} type="button" onClick={() => setRecordingS(s)}
+                                        className={`px-3 py-1 rounded border ${recordingS === s ? btnActive : btnInactive}`}>
+                                        {s}s
+                                    </button>
+                                ))}
+                            </div>
+                            <input type="number" min="1" value={recordingS}
+                                onChange={(e) => setRecordingS(e.target.value)} placeholder="Custom duration"
+                                className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                        </div>
+                        <button type="button" onClick={handleStartCountdown}
+                            className="bg-blue-600 text-white rounded px-4 py-2">
+                            Start countdown
+                        </button>
+                    </>
+                )}
+
+                {phase === "idle" && inputMode === "upload" && (
+                    <>
+                        <div>
+                            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Video file</label>
+                            <input type="file" accept="video/*" onChange={(e) => setUploadFile(e.target.files[0])}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                        </div>
+                        <button type="button" onClick={handleUploadSubmit}
+                            className="bg-blue-600 text-white rounded px-4 py-2">
+                            Analyze
+                        </button>
+                    </>
+                )}
+
+                {phase === "idle" && inputMode === "manual" && (
+                    <>
                         <input type="number" step="any" min="0" value={manualHeightCm}
-                            onChange={(e) => setManualHeightCm(e.target.value)}
-                            placeholder="Jump height (cm)"
+                            onChange={(e) => setManualHeightCm(e.target.value)} placeholder="Jump height (cm)"
                             className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
                         {manualHeightCm && (
                             <button type="button" onClick={async () => {
@@ -298,18 +313,11 @@ function UploadVertical() {
                                     if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
                                     else { setResult(data); setPhase("done"); }
                                 } catch { setError("Could not connect to the server"); setPhase("error"); }
-                            }} className="w-full bg-gray-600 text-white rounded px-4 py-2">
+                            }} className="bg-gray-600 text-white rounded px-4 py-2">
                                 Save manually
                             </button>
                         )}
-                    </div>
-                )}
-
-                {phase === "idle" && (
-                    <button type="button" onClick={handleStartCountdown}
-                        className="bg-blue-600 text-white rounded px-4 py-2">
-                        Start countdown
-                    </button>
+                    </>
                 )}
 
                 {phase === "uploading" && (
@@ -326,9 +334,7 @@ function UploadVertical() {
                 )}
             </div>
 
-            {error && (
-                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">{error}</div>
-            )}
+            {error && <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">{error}</div>}
 
             {result && (
                 <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded">
