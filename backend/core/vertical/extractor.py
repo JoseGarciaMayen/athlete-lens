@@ -22,7 +22,7 @@ def load_video(video_path: str) -> dict:
         "fps": fps
     }
 
-def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO) -> dict:
+def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO, device: str ="cpu") -> dict:
     """
     Tracks ankles vertical position during the jump
     """
@@ -33,7 +33,7 @@ def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO) -> dict:
         if not ret:
             break
 
-        results = model(frame, verbose=False, device="cpu") # gpu not needed
+        results = model(frame, verbose=False, device=device)
 
         has_detection = results[0].keypoints is not None and len(results[0].keypoints.xy) > 0
 
@@ -140,7 +140,7 @@ def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: int) -> dic
         "flight_time_ms": t * 1000
     }
 
-def analyze(video_path: str, model: ultralytics.YOLO) -> dict:
+def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu") -> dict:
     """
     Orchestrates the full vertical analysis pipeline.
     Loads video, tracks ankles, detects takeoff and landing frames and computes jump height and flight time.
@@ -152,7 +152,7 @@ def analyze(video_path: str, model: ultralytics.YOLO) -> dict:
     cap = video_result["cap"]
     fps = video_result["fps"]
 
-    tracking_result = track_ankles(cap, model)
+    tracking_result = track_ankles(cap, model, device)
     cap.release()
 
     if not tracking_result["success"]:

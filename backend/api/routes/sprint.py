@@ -56,7 +56,7 @@ def analyze_sprint(
             raw_path = tmp.name
 
             try:
-                result = analyze(raw_path, model)
+                result = analyze(raw_path, model, request.app.state.device)
             except Exception:
                 logger.exception("Unexpected error during sprint analysis")
                 raise HTTPException(status_code=500, detail="Internal error during video analysis")

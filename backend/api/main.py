@@ -1,4 +1,5 @@
 import os
+import torch
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +19,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "../../frontend/.env"))
 @asynccontextmanager
 async def lifespan(app):
     create_tables()
+    app.state.device = "cuda" if torch.cuda.is_available() else "cpu" # Check if there is GPU
     app.state.model = YOLO("yolov8n-pose.pt") # Preload model into memory to avoid loading it on every request
 
     db = SessionLocal()

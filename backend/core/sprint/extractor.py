@@ -28,7 +28,11 @@ def load_video(video_path: str) -> dict:
     }
 
 
-def detect_finish_crossing(cap: cv2.VideoCapture, width: int, fps: float, model: ultralytics.YOLO) -> dict:
+def detect_finish_crossing(
+    cap: cv2.VideoCapture,
+    width: int, fps: float,
+    model: ultralytics.YOLO,
+    device: str = "cpu") -> dict:
     """
     Iterate frames until the athlete's hip center crosses the horizontal midpoint (width / 2).
 
@@ -48,7 +52,7 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, fps: float, model:
         if not ret:
             break
 
-        results = model(frame, verbose=False, device="cpu")
+        results = model(frame, verbose=False, device=device)
 
         has_detection = results[0].boxes is not None and len(results[0].boxes) > 0
 
@@ -92,7 +96,7 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, fps: float, model:
     return {"success": False, "error": "Athlete never crossed the frame midpoint"}
 
 
-def analyze(video_path: str, model: ultralytics.YOLO) -> dict:
+def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu") -> dict:
     """
     Orchestrates the full sprint analysis pipeline.
     Loads video, iterates frames, detects the finish crossing and computes sprint time.
@@ -106,7 +110,7 @@ def analyze(video_path: str, model: ultralytics.YOLO) -> dict:
     fps   = video_result["fps"]
     width = video_result["width"]
 
-    crossing_result = detect_finish_crossing(cap, width, fps, model)
+    crossing_result = detect_finish_crossing(cap, width, fps, model, device)
     cap.release()
 
     if not crossing_result["success"]:
