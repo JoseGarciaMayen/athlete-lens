@@ -1,6 +1,4 @@
 import pytest
-from ultralytics import YOLO
-from api.main import app
 from db.crud import create_athlete
 from db.models import VerticalMetric
 

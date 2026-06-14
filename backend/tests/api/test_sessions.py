@@ -1,4 +1,3 @@
-import pytest
 from db.crud import create_athlete, create_session
 from datetime import date
 

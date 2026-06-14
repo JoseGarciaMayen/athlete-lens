@@ -1,9 +1,8 @@
-from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from db.crud import (
-    get_athlete, update_athlete, get_sessions, create_session, 
-    get_best_vertical_per_session, get_best_horizontal_per_session, get_best_sprint_per_session, 
+    get_athlete, update_athlete, get_sessions, create_session,
+    get_best_vertical_per_session, get_best_horizontal_per_session, get_best_sprint_per_session,
     get_all_metrics, delete_vertical_metric, delete_horizontal_metric, delete_sprint_metric
 )
 from db.database import get_db

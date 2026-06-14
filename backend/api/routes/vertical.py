@@ -1,6 +1,5 @@
 import tempfile
 import os
-import subprocess
 import logging
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends, Request
@@ -52,7 +51,7 @@ def analyze_vertical(
 
             try:
                 result = analyze(raw_path, model)
-            except Exception as e:
+            except Exception:
                 logger.exception("Unexpected error during vertical analysis")
                 raise HTTPException(status_code=500, detail="Internal error during video analysis")
 

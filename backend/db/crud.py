@@ -127,7 +127,7 @@ def get_best_horizontal_per_session(db: Session) -> list:
         .order_by(SessionModel.date)
         .all()
     )
- 
+
 def get_best_sprint_per_session(db: Session, distance_m: float) -> list:
     return (
         db.query(
@@ -168,49 +168,49 @@ def delete_sprint_metric(db: Session, metric_id: int) -> bool:
 
 def get_all_metrics(db: Session) -> list:
     metrics = []
- 
+
     vertical_rows = (
         db.query(VerticalMetric, SessionModel.date, SessionModel.notes)
         .join(SessionModel, VerticalMetric.session_id == SessionModel.id)
         .all()
     )
-    for metric, date, notes in vertical_rows:
+    for metric, session_date, notes in vertical_rows:
         metrics.append({
             "id":    metric.id,
             "type":  "vertical",
-            "date":  date,
+            "date":  session_date,
             "value": metric.jump_height_cm,
             "notes": notes,
         })
- 
+
     horizontal_rows = (
         db.query(HorizontalMetric, SessionModel.date, SessionModel.notes)
         .join(SessionModel, HorizontalMetric.session_id == SessionModel.id)
         .all()
     )
-    for metric, date, notes in horizontal_rows:
+    for metric, session_date, notes in horizontal_rows:
         metrics.append({
             "id":    metric.id,
             "type":  "horizontal",
-            "date":  date,
+            "date":  session_date,
             "value": metric.jump_distance_cm,
             "notes": notes,
         })
- 
+
     sprint_rows = (
         db.query(SprintMetric, SessionModel.date, SessionModel.notes)
         .join(SessionModel, SprintMetric.session_id == SessionModel.id)
         .all()
     )
-    for metric, date, notes in sprint_rows:
+    for metric, session_date, notes in sprint_rows:
         metrics.append({
             "id":          metric.id,
             "type":        "sprint",
-            "date":        date,
+            "date":        session_date,
             "value":       metric.sprint_time_s,
             "distance_m":  metric.distance_m,
             "notes":       notes,
         })
- 
+
     metrics.sort(key=lambda m: m["date"], reverse=True)
     return metrics

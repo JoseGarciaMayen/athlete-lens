@@ -1,7 +1,6 @@
 import cv2
 from ultralytics import YOLO
 import matplotlib.pyplot as plt
-import numpy as np
 
 VIDEO_PATH = "tests/core/vertical/fixtures/video.mp4"
 
@@ -31,7 +30,7 @@ if ret:
         keypoints = results[0].keypoints.xy[0]
         left_ankle = keypoints[15]
         right_ankle = keypoints[16]
-        print(f"\nKeypoints detected in first frame")
+        print("\nKeypoints detected in first frame")
         print(f"Left ankle:  x={left_ankle[0]:.1f}, y={left_ankle[1]:.1f}")
         print(f"Right ankle: x={right_ankle[0]:.1f}, y={right_ankle[1]:.1f}")
     else:

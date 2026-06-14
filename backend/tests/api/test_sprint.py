@@ -1,6 +1,5 @@
 import pytest
-from db.crud import create_athlete, get_or_create_session
-from datetime import date
+from db.crud import create_athlete
 
 
 def test_analyze_sprint_no_file_no_manual(client):

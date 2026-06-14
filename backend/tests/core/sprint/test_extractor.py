@@ -1,6 +1,6 @@
 import pytest
 from ultralytics import YOLO
-from core.sprint.extractor import detect_finish_crossing, load_video, analyze
+from core.sprint.extractor import load_video, analyze
 
 
 def test_load_video_invalid_path():
