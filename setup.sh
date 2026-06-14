@@ -74,7 +74,7 @@ if [[ ! -f frontend/.env ]]; then
   cp frontend/.env.example frontend/.env
   warn "frontend/.env created from example — edit it with your own values before using the tunnel"
 else
-  info "frontend/.env already exists – skipping"
+  info "frontend/.env already exists, skipping"
 fi
 
 # ── Backend dependencies ──────────────────────────────────────────────────────
