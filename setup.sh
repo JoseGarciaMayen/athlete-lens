@@ -20,6 +20,17 @@ echo "  ║       Athlete Lens Setup      ║"
 echo "  ╚═══════════════════════════════╝"
 echo -e "${RESET}"
 
+# ── Parse flags ───────────────────────────────────────────────────────────────
+USE_TUNNEL=false
+
+for arg in "$@"; do
+  case $arg in
+    --tunnel) USE_TUNNEL=true ;;
+    *) warn "Unknown argument: $arg" ;;
+  esac
+done
+
+# ── Check dependencies ────────────────────────────────────────────────────────
 info "Checking dependencies..."
 
 check_cmd() {
@@ -28,8 +39,8 @@ check_cmd() {
   fi
 }
 
-check_cmd node  "Install Node.js from https://nodejs.org (v18+ recommended)"
-check_cmd npm   "npm comes bundled with Node.js"
+check_cmd node "Install Node.js from https://nodejs.org (v18+ recommended)"
+check_cmd npm  "npm comes bundled with Node.js"
 
 if ! command -v uv &>/dev/null; then
   warn "'uv' not found. Installing it now..."
@@ -41,8 +52,16 @@ if ! command -v uv &>/dev/null; then
   success "uv installed"
 fi
 
+if $USE_TUNNEL; then
+  if ! command -v cloudflared &>/dev/null; then
+    error "'cloudflared' not found. Install it from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
+  fi
+  success "cloudflared found"
+fi
+
 success "All required tools are present"
 
+# ── Frontend dependencies ─────────────────────────────────────────────────────
 info "Installing frontend dependencies..."
 (
   cd frontend
@@ -53,11 +72,12 @@ success "Frontend dependencies installed"
 if [[ ! -f frontend/.env ]]; then
   info "Creating frontend/.env from .env.example..."
   cp frontend/.env.example frontend/.env
-  success "frontend/.env created"
+  warn "frontend/.env created from example — edit it with your own values before using the tunnel"
 else
   info "frontend/.env already exists – skipping"
 fi
 
+# ── Backend dependencies ──────────────────────────────────────────────────────
 info "Setting up Python virtual environment (this may take a minute)..."
 (
   cd backend
@@ -65,18 +85,29 @@ info "Setting up Python virtual environment (this may take a minute)..."
 )
 success "Backend dependencies installed"
 
+# ── Start ─────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}Starting Athlete Lens...${RESET}"
 echo -e "  ${CYAN}Backend${RESET}  → http://localhost:8000"
 echo -e "  ${CYAN}Frontend${RESET} → http://localhost:5173"
+
+if $USE_TUNNEL; then
+  FRONTEND_URL=$(grep FRONTEND_URL frontend/.env | cut -d '=' -f2)
+  echo -e "  ${CYAN}Tunnel${RESET}   → ${FRONTEND_URL}"
+fi
+
 echo ""
-echo -e "  Press ${BOLD}Ctrl+C${RESET} to stop both servers"
+echo -e "  Press ${BOLD}Ctrl+C${RESET} to stop all servers"
 echo ""
 
 cleanup() {
   echo ""
   info "Shutting down..."
   kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+  if $USE_TUNNEL; then
+    kill "$TUNNEL_PID" 2>/dev/null || true
+    wait "$TUNNEL_PID" 2>/dev/null || true
+  fi
   wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
   success "All servers stopped. Goodbye!"
 }
@@ -92,8 +123,14 @@ sleep 2
 
 (
   cd frontend
-  npm run dev
+  npm run dev > /dev/null 2>&1
 ) &
 FRONTEND_PID=$!
+
+if $USE_TUNNEL; then
+  sleep 1
+    cloudflared tunnel run athlete-lens > /dev/null 2>&1 &
+  TUNNEL_PID=$!
+fi
 
 wait "$BACKEND_PID" "$FRONTEND_PID"
