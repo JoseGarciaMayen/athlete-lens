@@ -36,8 +36,8 @@ function UploadVertical() {
     const timerRef = useRef(null);
     const streamRef = useRef(null);
     const videoRef = useRef(null);
+    const audioCtxRef = useRef(null);
 
-    // Attach stream to video element when available
     useEffect(() => {
         if (videoRef.current && streamRef.current) {
             videoRef.current.srcObject = streamRef.current;
@@ -88,7 +88,10 @@ function UploadVertical() {
     }
 
     async function startRecording(recSeconds, stream) {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const audioCtx = audioCtxRef.current;
         playBeep(audioCtx);
 
         await new Promise((resolve) => setTimeout(resolve, BEEP_DURATION * 1000));
@@ -161,6 +164,10 @@ function UploadVertical() {
             streamRef.current = null;
         }
         clearInterval(timerRef.current);
+        if (audioCtxRef.current) {
+            audioCtxRef.current.close();
+            audioCtxRef.current = null;
+        }
         setPhase("idle");
         setResult(null);
         setError(null);
@@ -175,7 +182,6 @@ function UploadVertical() {
 
     return (
         <>
-            {/* Fullscreen camera preview */}
             {showFullscreen && (
                 <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
                     <video
@@ -186,7 +192,6 @@ function UploadVertical() {
                         className="w-full h-full object-cover"
                     />
 
-                    {/* Overlay */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         {phase === "preparing" && (
                             <>

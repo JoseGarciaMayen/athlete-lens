@@ -39,6 +39,7 @@ function UploadSprint() {
     const timerRef = useRef(null);
     const streamRef = useRef(null);
     const videoRef = useRef(null);
+    const audioCtxRef = useRef(null);
 
     useEffect(() => {
         if (videoRef.current && streamRef.current) {
@@ -88,7 +89,10 @@ function UploadSprint() {
     }
 
     async function startRecording(stream) {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const audioCtx = audioCtxRef.current;
         playCountdownBeeps(audioCtx);
 
         await new Promise((resolve) => setTimeout(resolve, BEEP_GAP * 2 * 1000));
@@ -154,6 +158,10 @@ function UploadSprint() {
             streamRef.current = null;
         }
         clearInterval(timerRef.current);
+        if (audioCtxRef.current) {
+            audioCtxRef.current.close();
+            audioCtxRef.current = null;
+        }
         setPhase("idle");
         setResult(null);
         setError(null);
@@ -167,7 +175,6 @@ function UploadSprint() {
 
     return (
         <>
-            {/* Fullscreen camera preview */}
             {showFullscreen && (
                 <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
                     <video
