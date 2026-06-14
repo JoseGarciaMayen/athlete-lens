@@ -26,21 +26,7 @@ class Session(Base):
     notes = Column(String, nullable=True)
 
     athlete = relationship("Athlete", back_populates="sessions")
-    acoustic_metrics = relationship("AcousticMetric", back_populates="session")
     vertical_metrics = relationship("VerticalMetric", back_populates="session")
-
-
-class AcousticMetric(Base):
-    __tablename__ = "acoustic_metric"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(Integer, ForeignKey("session.id"), nullable=False)
-    time_delta_ms = Column(Float)
-    events_detected = Column(Integer)
-    distance_m = Column(Integer)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    session = relationship("Session", back_populates="acoustic_metrics")
 
 
 class VerticalMetric(Base):

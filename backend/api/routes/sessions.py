@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from db.crud import (
     get_athlete, update_athlete, get_sessions, create_session, 
     get_best_vertical_per_session, get_best_horizontal_per_session, get_best_sprint_per_session, 
-    get_all_metrics, delete_vertical_metric, delete_acoustic_metric, delete_horizontal_metric
+    get_all_metrics, delete_vertical_metric, delete_horizontal_metric
 )
 from db.database import get_db
 from api.schemas import AthleteUpdate, SessionCreate
@@ -61,14 +61,6 @@ def get_metrics(db: Session = Depends(get_db)):
 @router.delete("/metrics/vertical/{metric_id}")
 def delete_vertical(metric_id: int, db: Session = Depends(get_db)):
     deleted = delete_vertical_metric(db, metric_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Metric not found")
-    return {"success": True}
-
-
-@router.delete("/metrics/acoustic/{metric_id}")
-def delete_acoustic(metric_id: int, db: Session = Depends(get_db)):
-    deleted = delete_acoustic_metric(db, metric_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Metric not found")
     return {"success": True}

@@ -1,6 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from db.models import Athlete, Session as SessionModel, AcousticMetric, VerticalMetric, HorizontalMetric
+from db.models import Athlete, Session as SessionModel, VerticalMetric, HorizontalMetric
 
 
 def get_athlete(db: Session) -> Athlete | None:
@@ -48,18 +48,6 @@ def get_or_create_session(db: Session, athlete_id: int, date: date, notes: str =
 def get_sessions(db: Session) -> list[SessionModel]:
     return db.query(SessionModel).order_by(SessionModel.date.desc()).all()
 
-
-def create_acoustic_metric(db: Session, session_id: int, time_delta_ms: float, events_detected: int | None, distance_m: int) -> AcousticMetric:
-    metric = AcousticMetric(
-        session_id=session_id,
-        time_delta_ms=time_delta_ms,
-        events_detected=events_detected,
-        distance_m=distance_m
-    )
-    db.add(metric)
-    db.commit()
-    db.refresh(metric)
-    return metric
 
 def create_vertical_metric(
     db: Session,
@@ -119,66 +107,66 @@ def get_best_horizontal_per_session(db: Session) -> list:
     )
 
 
-def get_best_sprint_per_session(db: Session, distance_m: int) -> list:
-    return (
-        db.query(
-            SessionModel.date,
-            func.min(AcousticMetric.time_delta_ms).label("value")
-        )
-        .join(AcousticMetric, AcousticMetric.session_id == SessionModel.id)
-        .filter(AcousticMetric.distance_m == distance_m)
-        .group_by(SessionModel.date)
-        .order_by(SessionModel.date)
-        .all()
-    )
+# def get_best_sprint_per_session(db: Session, distance_m: int) -> list:
+#     return (
+#         db.query(
+#             SessionModel.date,
+#             func.min(AcousticMetric.time_delta_ms).label("value")
+#         )
+#         .join(AcousticMetric, AcousticMetric.session_id == SessionModel.id)
+#         .filter(AcousticMetric.distance_m == distance_m)
+#         .group_by(SessionModel.date)
+#         .order_by(SessionModel.date)
+#         .all()
+#     ) 
 
-def get_all_metrics(db: Session) -> list:
-    metrics = []
+# def get_all_metrics(db: Session) -> list:
+#     metrics = []
 
-    vertical_rows = (
-        db.query(VerticalMetric, SessionModel.date, SessionModel.notes)
-        .join(SessionModel, VerticalMetric.session_id == SessionModel.id)
-        .all()
-    )
-    for metric, date, notes in vertical_rows:
-        metrics.append({
-            "id": metric.id,
-            "type": "vertical",
-            "date": date,
-            "value": metric.jump_height_cm,
-            "notes": notes,
-        })
+#     vertical_rows = (
+#         db.query(VerticalMetric, SessionModel.date, SessionModel.notes)
+#         .join(SessionModel, VerticalMetric.session_id == SessionModel.id)
+#         .all()
+#     )
+#     for metric, date, notes in vertical_rows:
+#         metrics.append({
+#             "id": metric.id,
+#             "type": "vertical",
+#             "date": date,
+#             "value": metric.jump_height_cm,
+#             "notes": notes,
+#         })
 
-    acoustic_rows = (
-        db.query(AcousticMetric, SessionModel.date, SessionModel.notes)
-        .join(SessionModel, AcousticMetric.session_id == SessionModel.id)
-        .all()
-    )
-    for metric, date, notes in acoustic_rows:
-        metrics.append({
-            "id": metric.id,
-            "type": "acoustic",
-            "date": date,
-            "value": metric.time_delta_ms,
-            "notes": notes,
-        })
+#     acoustic_rows = (
+#         db.query(AcousticMetric, SessionModel.date, SessionModel.notes)
+#         .join(SessionModel, AcousticMetric.session_id == SessionModel.id)
+#         .all()
+#     )
+#     for metric, date, notes in acoustic_rows:
+#         metrics.append({
+#             "id": metric.id,
+#             "type": "acoustic",
+#             "date": date,
+#             "value": metric.time_delta_ms,
+#             "notes": notes,
+#         })
 
-    horizontal_rows = (
-        db.query(HorizontalMetric, SessionModel.date, SessionModel.notes)
-        .join(SessionModel, HorizontalMetric.session_id == SessionModel.id)
-        .all()
-    )
-    for metric, date, notes in horizontal_rows:
-        metrics.append({
-            "id": metric.id,
-            "type": "horizontal",
-            "date": date,
-            "value": metric.jump_distance_cm,
-            "notes": notes,
-        })
+#     horizontal_rows = (
+#         db.query(HorizontalMetric, SessionModel.date, SessionModel.notes)
+#         .join(SessionModel, HorizontalMetric.session_id == SessionModel.id)
+#         .all()
+#     )
+#     for metric, date, notes in horizontal_rows:
+#         metrics.append({
+#             "id": metric.id,
+#             "type": "horizontal",
+#             "date": date,
+#             "value": metric.jump_distance_cm,
+#             "notes": notes,
+#         })
 
-    metrics.sort(key=lambda m: m["date"], reverse=True)
-    return metrics
+#     metrics.sort(key=lambda m: m["date"], reverse=True)
+#     return metrics
 
 def delete_vertical_metric(db: Session, metric_id: int) -> bool:
     metric = db.query(VerticalMetric).filter(VerticalMetric.id == metric_id).first()
