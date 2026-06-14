@@ -17,7 +17,7 @@ def load_video(video_path: str, fps_override: float | None = None) -> dict:
         }
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    if not fps_override and (video_result["fps"] <= 0 or video_result["fps"] > 240):
+    if not fps_override and (fps <= 0 or fps > 240):
         cap.release()
         return {"success": False, "error": f"Invalid FPS read from video metadata ({fps})."}
 
