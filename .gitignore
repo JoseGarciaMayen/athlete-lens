@@ -34,3 +34,5 @@ backend/tests/README.md
 *.jpg
 
 .cloudflared/
+
+annotate_sprint.py
