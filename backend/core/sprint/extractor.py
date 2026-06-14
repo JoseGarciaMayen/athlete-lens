@@ -15,7 +15,8 @@ def load_video(video_path: str) -> dict:
 
     if fps <= 0 or fps > 240:
         cap.release()
-        return {"success": False, "error": f"Invalid FPS read from video metadata ({fps}). Try recording at a fixed frame rate."}
+        return {"success": False,
+        "error": f"Invalid FPS read from video metadata ({fps}). Try recording at a fixed frame rate."}
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
