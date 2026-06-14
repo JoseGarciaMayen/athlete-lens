@@ -37,8 +37,10 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
 
     if not hasattr(app.state, "model"):
+        import torch
         from ultralytics import YOLO
-        app.state.model = YOLO("yolov8n-pose.pt")
+        app.state.model  = YOLO("yolov8n-pose.pt")
+        app.state.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     yield TestClient(app)
     app.dependency_overrides.clear()
