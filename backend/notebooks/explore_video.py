@@ -1,34 +1,51 @@
+"""
+explore_vertical.py
+===================
+Exploration notebook for the vertical jump module.
+Validates YOLOv8 ankle tracking and takeoff/landing detection on a video.
+
+Usage:
+    python notebooks/explore_vertical.py
+    python notebooks/explore_vertical.py path/to/your/video.mp4
+"""
+
+import sys
 import cv2
-from ultralytics import YOLO
 import matplotlib.pyplot as plt
+from ultralytics import YOLO
 
-VIDEO_PATH = "tests/core/vertical/fixtures/video.mp4"
+sys.path.append(".")
+from core.vertical.extractor import detect_takeoff_and_landing  # noqa: E402
 
-model = YOLO("yolov8n-pose.pt")
+VIDEO_PATH = sys.argv[1] if len(sys.argv) > 1 else "tests/core/vertical/fixtures/video.mp4"
+MODEL_PATH = "yolov8n-pose.pt"
 
-# Open video
+print(f"Video: {VIDEO_PATH}")
+
+model = YOLO(MODEL_PATH)
+
+# ── Video metadata ─────────────────────────────────────────────────────────────
 cap = cv2.VideoCapture(VIDEO_PATH)
-
-fps = cap.get(cv2.CAP_PROP_FPS)
+fps         = cap.get(cv2.CAP_PROP_FPS)
 frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-duration = frame_count / fps
+width       = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+height      = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+duration    = frame_count / fps
 
 print(f"FPS: {fps}")
 print(f"Total frames: {frame_count}")
 print(f"Resolution: {width}x{height}")
-print(f"Duration: {duration:.2f} seconds")
+print(f"Duration: {duration:.2f}s")
 
-# Process first frame with detected person
+# ── First frame keypoint check ─────────────────────────────────────────────────
 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 ret, frame = cap.read()
 
 if ret:
     results = model(frame, verbose=False)
     if results[0].keypoints is not None and len(results[0].keypoints.xy) > 0:
-        keypoints = results[0].keypoints.xy[0]
-        left_ankle = keypoints[15]
+        keypoints   = results[0].keypoints.xy[0]
+        left_ankle  = keypoints[15]
         right_ankle = keypoints[16]
         print("\nKeypoints detected in first frame")
         print(f"Left ankle:  x={left_ankle[0]:.1f}, y={left_ankle[1]:.1f}")
@@ -36,13 +53,13 @@ if ret:
     else:
         print("No person detected in first frame")
 
+# ── Ankle tracking ─────────────────────────────────────────────────────────────
 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-left_ankle_y = []
+left_ankle_y  = []
 right_ankle_y = []
-frames = []
-frame_number = 0
+frames        = []
+frame_number  = 0
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -70,29 +87,25 @@ plt.ylabel("Y position (pixels)")
 plt.legend()
 plt.gca().invert_yaxis()
 plt.savefig("notebooks/ankle_tracking.png", dpi=150, bbox_inches="tight")
-print("Plot saved to notebooks/ankle_tracking.png")
+print("\nPlot saved to notebooks/ankle_tracking.png")
 
-# Visualize YOLO ankle position overlay
-
-import sys
-sys.path.append("..")
-from core.vertical.extractor import detect_takeoff_and_landing
-
-ankle_y = [(l + r) / 2 for l, r in zip(left_ankle_y, right_ankle_y)] # mean of the positions of right and left ankles
+# ── Takeoff / landing detection ────────────────────────────────────────────────
+ankle_y = [(left + right) / 2 for left, right in zip(left_ankle_y, right_ankle_y)]
 
 result = detect_takeoff_and_landing(ankle_y, fps)
-print(result)
+print(f"\nDetection result: {result}")
 
+if not result["success"]:
+    print("Detection failed — skipping overlay video.")
+    sys.exit(0)
+
+# ── Annotated video output ─────────────────────────────────────────────────────
 cap = cv2.VideoCapture(VIDEO_PATH)
-fps = cap.get(cv2.CAP_PROP_FPS)
-width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-out = cv2.VideoWriter("notebooks/ankle_overlay.mp4", fourcc, fps, (width, height))
+out    = cv2.VideoWriter("notebooks/ankle_overlay.mp4", fourcc, fps, (width, height))
 
 rest_position = int(result["rest_position"])
-threshold = int(result["threshold"])
+threshold     = int(result["threshold"])
 
 frame_idx = 0
 while True:
@@ -100,22 +113,19 @@ while True:
     if not ret:
         break
 
-    # rest position line
     cv2.line(frame, (0, rest_position), (width, rest_position), (0, 255, 0), 2)
     cv2.putText(frame, "rest", (10, rest_position - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-    # threshold line
     cv2.line(frame, (0, threshold), (width, threshold), (255, 0, 0), 2)
     cv2.putText(frame, "threshold", (10, threshold - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
     if frame_idx < len(ankle_y):
         y = int(ankle_y[frame_idx])
-        x = 400
-        cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
+        cv2.circle(frame, (400, y), 8, (0, 0, 255), -1)
 
     out.write(frame)
     frame_idx += 1
 
 cap.release()
 out.release()
-
+print("Overlay video saved to notebooks/ankle_overlay.mp4")
