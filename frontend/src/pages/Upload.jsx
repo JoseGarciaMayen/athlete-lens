@@ -7,8 +7,7 @@ function Upload() {
     const [activeTab, setActiveTab] = useState("vertical");
 
     return (
-        <div className="max-w-md mx-auto p-6 mt-8 bg-white shadow rounded-lg">
-            <h1 className="text-2xl font-bold text-center mb-6">Upload Session</h1>
+        <div className="max-w-md mx-auto p-6 bg-white shadow rounded-lg">
 
             <div className="flex border-b border-gray-200 mb-6">
                 <button
