@@ -1,6 +1,8 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from db.models import Athlete, Session as SessionModel, VerticalMetric, HorizontalMetric
+from db.models import Athlete, Session as SessionModel, VerticalMetric, HorizontalMetric, SprintMetric
+
+from datetime import date
 
 
 def get_athlete(db: Session) -> Athlete | None:
@@ -81,6 +83,26 @@ def create_horizontal_metric(db: Session, session_id: int, jump_distance_cm: flo
     db.refresh(metric)
     return metric
 
+def create_sprint_metric(
+    db: Session,
+    session_id: int,
+    distance_m: float,
+    sprint_time_s: float,
+    crossing_frame: int | None,
+    fps_used: float | None,
+) -> SprintMetric:
+    metric = SprintMetric(
+        session_id=session_id,
+        distance_m=distance_m,
+        sprint_time_s=sprint_time_s,
+        crossing_frame=crossing_frame,
+        fps_used=fps_used,
+    )
+    db.add(metric)
+    db.commit()
+    db.refresh(metric)
+    return metric
+
 def get_best_vertical_per_session(db: Session) -> list:
     return (
         db.query(
@@ -105,79 +127,22 @@ def get_best_horizontal_per_session(db: Session) -> list:
         .order_by(SessionModel.date)
         .all()
     )
-
-
-# def get_best_sprint_per_session(db: Session, distance_m: int) -> list:
-#     return (
-#         db.query(
-#             SessionModel.date,
-#             func.min(AcousticMetric.time_delta_ms).label("value")
-#         )
-#         .join(AcousticMetric, AcousticMetric.session_id == SessionModel.id)
-#         .filter(AcousticMetric.distance_m == distance_m)
-#         .group_by(SessionModel.date)
-#         .order_by(SessionModel.date)
-#         .all()
-#     ) 
-
-# def get_all_metrics(db: Session) -> list:
-#     metrics = []
-
-#     vertical_rows = (
-#         db.query(VerticalMetric, SessionModel.date, SessionModel.notes)
-#         .join(SessionModel, VerticalMetric.session_id == SessionModel.id)
-#         .all()
-#     )
-#     for metric, date, notes in vertical_rows:
-#         metrics.append({
-#             "id": metric.id,
-#             "type": "vertical",
-#             "date": date,
-#             "value": metric.jump_height_cm,
-#             "notes": notes,
-#         })
-
-#     acoustic_rows = (
-#         db.query(AcousticMetric, SessionModel.date, SessionModel.notes)
-#         .join(SessionModel, AcousticMetric.session_id == SessionModel.id)
-#         .all()
-#     )
-#     for metric, date, notes in acoustic_rows:
-#         metrics.append({
-#             "id": metric.id,
-#             "type": "acoustic",
-#             "date": date,
-#             "value": metric.time_delta_ms,
-#             "notes": notes,
-#         })
-
-#     horizontal_rows = (
-#         db.query(HorizontalMetric, SessionModel.date, SessionModel.notes)
-#         .join(SessionModel, HorizontalMetric.session_id == SessionModel.id)
-#         .all()
-#     )
-#     for metric, date, notes in horizontal_rows:
-#         metrics.append({
-#             "id": metric.id,
-#             "type": "horizontal",
-#             "date": date,
-#             "value": metric.jump_distance_cm,
-#             "notes": notes,
-#         })
-
-#     metrics.sort(key=lambda m: m["date"], reverse=True)
-#     return metrics
+ 
+def get_best_sprint_per_session(db: Session, distance_m: float) -> list:
+    return (
+        db.query(
+            SessionModel.date,
+            func.min(SprintMetric.sprint_time_s).label("value")
+        )
+        .join(SprintMetric, SprintMetric.session_id == SessionModel.id)
+        .filter(SprintMetric.distance_m == distance_m)
+        .group_by(SessionModel.date)
+        .order_by(SessionModel.date)
+        .all()
+    )
 
 def delete_vertical_metric(db: Session, metric_id: int) -> bool:
     metric = db.query(VerticalMetric).filter(VerticalMetric.id == metric_id).first()
-    if metric is None:
-        return False
-    db.delete(metric)
-    db.commit()
-    return True
-
-def delete_acoustic_metric(db: Session, metric_id: int) -> bool:
-    metric = db.query(AcousticMetric).filter(AcousticMetric.id == metric_id).first()
     if metric is None:
         return False
     db.delete(metric)
@@ -192,3 +157,60 @@ def delete_horizontal_metric(db: Session, metric_id: int) -> bool:
     db.delete(metric)
     db.commit()
     return True
+
+def delete_sprint_metric(db: Session, metric_id: int) -> bool:
+    metric = db.query(SprintMetric).filter(SprintMetric.id == metric_id).first()
+    if metric is None:
+        return False
+    db.delete(metric)
+    db.commit()
+    return True
+
+def get_all_metrics(db: Session) -> list:
+    metrics = []
+ 
+    vertical_rows = (
+        db.query(VerticalMetric, SessionModel.date, SessionModel.notes)
+        .join(SessionModel, VerticalMetric.session_id == SessionModel.id)
+        .all()
+    )
+    for metric, date, notes in vertical_rows:
+        metrics.append({
+            "id":    metric.id,
+            "type":  "vertical",
+            "date":  date,
+            "value": metric.jump_height_cm,
+            "notes": notes,
+        })
+ 
+    horizontal_rows = (
+        db.query(HorizontalMetric, SessionModel.date, SessionModel.notes)
+        .join(SessionModel, HorizontalMetric.session_id == SessionModel.id)
+        .all()
+    )
+    for metric, date, notes in horizontal_rows:
+        metrics.append({
+            "id":    metric.id,
+            "type":  "horizontal",
+            "date":  date,
+            "value": metric.jump_distance_cm,
+            "notes": notes,
+        })
+ 
+    sprint_rows = (
+        db.query(SprintMetric, SessionModel.date, SessionModel.notes)
+        .join(SessionModel, SprintMetric.session_id == SessionModel.id)
+        .all()
+    )
+    for metric, date, notes in sprint_rows:
+        metrics.append({
+            "id":          metric.id,
+            "type":        "sprint",
+            "date":        date,
+            "value":       metric.sprint_time_s,
+            "distance_m":  metric.distance_m,
+            "notes":       notes,
+        })
+ 
+    metrics.sort(key=lambda m: m["date"], reverse=True)
+    return metrics

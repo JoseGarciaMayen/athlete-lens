@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes.vertical import router as vertical_router
 from api.routes.sessions import router as sessions_router
 from api.routes.horizontal import router as horizontal_router
+from api.routes.sprint import router as sprint_router
 from db.database import create_tables, SessionLocal, get_db
 from db.crud import get_athlete, create_athlete
 from contextlib import asynccontextmanager
@@ -38,6 +39,7 @@ app.add_middleware(
 app.include_router(vertical_router, prefix="/api")
 app.include_router(horizontal_router, prefix="/api")
 app.include_router(sessions_router, prefix="/api")
+app.include_router(sprint_router, prefix="/api")
 
 @app.get("/health")
 def health_check():
