@@ -22,7 +22,8 @@ def analyze_sprint(
     notes: str = Form(None),
     distance_m: float = Form(...),
     sprint_time_s: float | None = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    fps: float | None = Form(None),
 ):
     if file is None and sprint_time_s is None:
         raise HTTPException(status_code=422, detail="Either file or sprint_time_s is required")
@@ -56,7 +57,7 @@ def analyze_sprint(
             raw_path = tmp.name
 
             try:
-                result = analyze(raw_path, model, request.app.state.device)
+                result = analyze(raw_path, model, request.app.state.device, fps)
             except Exception:
                 logger.exception("Unexpected error during sprint analysis")
                 raise HTTPException(status_code=500, detail="Internal error during video analysis")

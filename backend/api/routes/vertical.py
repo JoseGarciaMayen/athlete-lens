@@ -20,6 +20,7 @@ def analyze_vertical(
     session_date: str = Form(...),
     notes: str = Form(None),
     jump_height_cm: float | None = Form(None),
+    fps: float | None = Form(None),
     db: Session = Depends(get_db)
     ):
     if file is None and jump_height_cm is None:
@@ -54,7 +55,7 @@ def analyze_vertical(
             raw_path = tmp.name
 
             try:
-                result = analyze(raw_path, model, request.app.state.device)
+                result = analyze(raw_path, model, request.app.state.device, fps)
             except Exception:
                 logger.exception("Unexpected error during vertical analysis")
                 raise HTTPException(status_code=500, detail="Internal error during video analysis")

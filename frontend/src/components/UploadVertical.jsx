@@ -37,6 +37,7 @@ function UploadVertical() {
     const streamRef = useRef(null);
     const videoRef = useRef(null);
     const audioCtxRef = useRef(null);
+    const fpsRef = useRef(null);
 
     useEffect(() => {
         if (videoRef.current && streamRef.current) {
@@ -59,7 +60,6 @@ function UploadVertical() {
         const recSeconds = parseInt(recordingS, 10);
         if (!recSeconds || recSeconds < 1) { setError("Recording duration is required"); return; }
 
-        // Request camera access before countdown starts
         let stream;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -91,8 +91,11 @@ function UploadVertical() {
         if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
             audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
         }
-        const audioCtx = audioCtxRef.current;
-        playBeep(audioCtx);
+        playBeep(audioCtxRef.current);
+
+        // Read FPS from camera track and store in ref for uploadVideo
+        const videoTrack = stream.getVideoTracks()[0];
+        fpsRef.current = videoTrack.getSettings().frameRate || 30;
 
         await new Promise((resolve) => setTimeout(resolve, BEEP_DURATION * 1000));
 
@@ -135,6 +138,7 @@ function UploadVertical() {
         const formData = new FormData();
         formData.append("session_date", sessionDate);
         formData.append("file", blob, "vertical.webm");
+        formData.append("fps", fpsRef.current);
         if (notes) formData.append("notes", notes);
 
         try {
@@ -175,6 +179,7 @@ function UploadVertical() {
         setRecordingLeft(null);
         chunksRef.current = [];
         mediaRecorderRef.current = null;
+        fpsRef.current = null;
     }
 
     const isFormDisabled = phase !== "idle";
@@ -218,14 +223,10 @@ function UploadVertical() {
             <div className="flex flex-col gap-4">
                 <div>
                     <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Date</label>
-                    <input
-                        type="date"
-                        required
-                        value={sessionDate}
+                    <input type="date" required value={sessionDate}
                         onChange={(e) => setSessionDate(e.target.value)}
                         disabled={isFormDisabled}
-                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
-                    />
+                        className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50" />
                 </div>
 
                 <div>

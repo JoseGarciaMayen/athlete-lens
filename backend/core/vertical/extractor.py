@@ -16,6 +16,11 @@ def load_video(video_path: str) -> dict:
             "error": f"{video_path} failed opening"
         }
     fps = cap.get(cv2.CAP_PROP_FPS)
+
+    if fps <= 0 or fps > 240:
+        cap.release()
+        return {"success": False, "error": f"Invalid FPS read from video metadata ({fps}). Try recording at a fixed frame rate."}
+
     return {
         "success": True,
         "cap": cap,
@@ -140,7 +145,7 @@ def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: int) -> dic
         "flight_time_ms": t * 1000
     }
 
-def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu") -> dict:
+def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_override: float | None = None) -> dict:
     """
     Orchestrates the full vertical analysis pipeline.
     Loads video, tracks ankles, detects takeoff and landing frames and computes jump height and flight time.
@@ -150,7 +155,7 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu") -> di
     if not video_result["success"]:
         return {"success": False, "error": video_result["error"]}
     cap = video_result["cap"]
-    fps = video_result["fps"]
+    fps = fps_override if fps_override else video_result["fps"]
 
     tracking_result = track_ankles(cap, model, device)
     cap.release()

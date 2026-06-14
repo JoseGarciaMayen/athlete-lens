@@ -40,6 +40,7 @@ function UploadSprint() {
     const streamRef = useRef(null);
     const videoRef = useRef(null);
     const audioCtxRef = useRef(null);
+    const fpsRef = useRef(null);
 
     useEffect(() => {
         if (videoRef.current && streamRef.current) {
@@ -60,7 +61,6 @@ function UploadSprint() {
         const prepSeconds = parseInt(preparationS, 10);
         if (!prepSeconds || prepSeconds < 1) { setError("Preparation time is required"); return; }
 
-        // Request camera before countdown
         let stream;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -92,8 +92,11 @@ function UploadSprint() {
         if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
             audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
         }
-        const audioCtx = audioCtxRef.current;
-        playCountdownBeeps(audioCtx);
+        playCountdownBeeps(audioCtxRef.current);
+
+        // Read FPS from camera track and store in ref for uploadVideo
+        const videoTrack = stream.getVideoTracks()[0];
+        fpsRef.current = videoTrack.getSettings().frameRate || 30;
 
         await new Promise((resolve) => setTimeout(resolve, BEEP_GAP * 2 * 1000));
 
@@ -129,6 +132,7 @@ function UploadSprint() {
         formData.append("session_date", sessionDate);
         formData.append("distance_m", distanceM);
         formData.append("file", blob, "sprint.webm");
+        formData.append("fps", fpsRef.current);
         if (notes) formData.append("notes", notes);
 
         try {
@@ -168,6 +172,7 @@ function UploadSprint() {
         setCountdown(null);
         chunksRef.current = [];
         mediaRecorderRef.current = null;
+        fpsRef.current = null;
     }
 
     const isFormDisabled = phase !== "idle";
