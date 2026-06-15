@@ -214,3 +214,27 @@ def get_all_metrics(db: Session) -> list:
 
     metrics.sort(key=lambda m: m["date"], reverse=True)
     return metrics
+
+def update_metric_date(db: Session, metric_type: str, metric_id: int, new_date: date) -> bool:
+    athlete = get_athlete(db)
+    if athlete is None:
+        return False
+
+    model_map = {
+        "vertical":   VerticalMetric,
+        "horizontal": HorizontalMetric,
+        "sprint":     SprintMetric,
+    }
+
+    model = model_map.get(metric_type)
+    if model is None:
+        return False
+
+    metric = db.query(model).filter(model.id == metric_id).first()
+    if metric is None:
+        return False
+
+    session = get_or_create_session(db, athlete_id=athlete.id, date=new_date)
+    metric.session_id = session.id
+    db.commit()
+    return True

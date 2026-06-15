@@ -47,6 +47,7 @@ function History() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
+    const [editingId, setEditingId] = useState(null);
 
     useEffect(() => {
         fetchMetrics();
@@ -89,6 +90,26 @@ function History() {
 
             setMetrics((prev) =>
                 prev.filter((m) => !(m.type === metric.type && m.id === metric.id))
+            );
+        } catch (err) {
+            setError(err.message);
+        }
+    }
+
+    async function handleDateChange(metric, newDate) {
+        setEditingId(null);
+        if (!newDate || newDate === metric.date) return;
+
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/metrics/${metric.type}/${metric.id}/date?new_date=${newDate}`,
+                { method: "PATCH" }
+            );
+            if (!response.ok) throw new Error("Failed to update date");
+            setMetrics((prev) =>
+                prev.map((m) =>
+                    m.type === metric.type && m.id === metric.id ? { ...m, date: newDate } : m
+                )
             );
         } catch (err) {
             setError(err.message);
@@ -140,17 +161,37 @@ function History() {
                                     <th className="px-4 py-2">Date</th>
                                     <th className="px-4 py-2">Type</th>
                                     <th className="px-4 py-2">Value</th>
-                                    <th className="px-4 py-2">Notes</th>
                                     <th className="px-4 py-2"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {pageMetrics.map((metric) => (
                                     <tr key={`${metric.type}-${metric.id}`} className="border-t border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
-                                        <td className="px-4 py-2">{metric.date}</td>
+                                        <td className="px-4 py-2">
+                                            {editingId === `${metric.type}-${metric.id}` ? (
+                                                <input
+                                                    type="date"
+                                                    defaultValue={metric.date}
+                                                    autoFocus
+                                                    onBlur={(e) => handleDateChange(metric, e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") handleDateChange(metric, e.target.value);
+                                                        if (e.key === "Escape") setEditingId(null);
+                                                    }}
+                                                    className="border border-blue-500 rounded px-1 py-0.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                                />
+                                            ) : (
+                                                <span
+                                                    onClick={() => setEditingId(`${metric.type}-${metric.id}`)}
+                                                    className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                                                    title="Click to edit date"
+                                                >
+                                                    {metric.date}
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-2">{TYPE_LABELS[metric.type]}</td>
                                         <td className="px-4 py-2">{formatValue(metric)}</td>
-                                        <td className="px-4 py-2 text-gray-500 dark:text-gray-400">{metric.notes || "—"}</td>
                                         <td className="px-4 py-2 text-right">
                                             <button
                                                 onClick={() => handleDelete(metric)}
