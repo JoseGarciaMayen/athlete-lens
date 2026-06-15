@@ -6,6 +6,14 @@ Built as a portfolio project. Designed for single-athlete personal use, running 
 
 ---
 
+**[→ Live demo](https://athlete-lens.netlify.app)** sample data, no backend required.
+
+<a href="https://athlete-lens.netlify.app">
+<img src="docs/dashboard.png" alt="Athlete Lens Dashboard" width="600" />
+</a>
+
+---
+
 ## What it measures
 
 | Module | Input | Output |
@@ -18,7 +26,7 @@ Built as a portfolio project. Designed for single-athlete personal use, running 
 
 ## Vertical jump
 
-<!-- GIF: vertical jump demo -->
+![Jump Detection](docs/ankle_overlay.gif)
 
 The phone records a countermovement jump from the side. YOLOv8 Pose tracks ankle keypoints (15/16) frame by frame. Takeoff and landing frames are detected from the Y-trajectory using a relative threshold. Jump height is derived from flight time:
 
@@ -32,7 +40,7 @@ h = g · t² / 8
 
 ## Sprint
 
-<!-- GIF: sprint demo -->
+![Sprint Detection](docs/sprint_crossing_readme.gif)
 
 The phone is placed at the finish line. A countdown timer gives the athlete time to reach the starting position. Three audible beeps mark T = 0; recording starts on the third beep. YOLOv8 Pose detects the frame where the athlete's hip center (keypoints 11/12) crosses the horizontal midpoint. Sprint time = `crossing_frame / fps`.
 
@@ -67,7 +75,7 @@ Distance is entered manually after measuring with a tape. No video processing.
 - [`uv`](https://github.com/astral-sh/uv): installed automatically by `setup.sh` if missing
 - (Optional) [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/): for mobile access
 
-**Hardware:** any machine capable of running YOLOv8 inference. CUDA is used automatically if available; CPU fallback processes a typical video in ~10 s on an RTX 3050 Ti, which is acceptable for personal-use frequency.
+**Hardware:** any machine capable of running YOLOv8 inference. CUDA is used automatically if available; CPU fallback processes a typical video in ~10 s, which is acceptable for personal-use frequency.
 
 ---
 
@@ -175,12 +183,6 @@ athlete-lens/
 │   └── public/                 # PWA manifest, service worker, icons
 └── setup.sh
 ```
-
----
-
-## Dashboard
-
-![Athlete Lens Dashboard](docs/dashboard.png)
 
 ---
 

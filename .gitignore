@@ -27,10 +27,6 @@ test.py
 
 *.mp4
 
-backend/core/acoustic/README.md
-backend/core/vertical/README.md
-backend/tests/README.md
-
 *.jpg
 
 .cloudflared/

@@ -26,7 +26,7 @@ This approach failed for a fundamental reason: **asymmetric clap energy**. The s
 
 The `MediaRecorder` starts exactly when the third beep begins. Frame 0 of the video therefore corresponds to T = 0 of the sprint. Sprint time is `crossing_frame / fps`. No offset needed.
 
-**Implementation detail:** `playCountdownBeeps` (frontend) schedules three beeps via the Web Audio API at t = 0, t = 0.5 s, t = 1.0 s. `MediaRecorder.start()` is called after a `setTimeout` of `BEEP_GAP * 2 * 1000` ms (1000 ms), which corresponds exactly to when the third beep begins.
+**Implementation detail:** `playCountdownBeeps` (frontend) schedules three beeps via the Web Audio API. `MediaRecorder.start()` is called after a `setTimeout` of `BEEP_GAP * 2 * 1000` ms (1000 ms), which corresponds exactly to when the third beep begins.
 
 ---
 
@@ -87,12 +87,6 @@ At startup, `main.py` checks `torch.cuda.is_available()` and stores the result i
 
 ---
 
-## Sprint time resolution
-
-At 60 fps, each frame represents 16.67 ms. Sprint time is stored as a float in seconds and displayed to 3 decimal places in the UI. No rounding is applied at the database layer.
-
----
-
 ## Reaction time is included
 
 The athlete starts on the third beep. The time between the beep and the athlete's first movement (reaction time, typically 120–200 ms) is included in `sprint_time_s`. This is consistent with how sprint times are measured in field conditions (reaction to a gun or whistle).
@@ -124,3 +118,5 @@ Identical to the vertical module. All functions in `extractor.py` return dicts. 
 The frontend uses the browser's `MediaRecorder` API, which produces WebM video. OpenCV reads WebM natively on most platforms. No server-side transcoding is needed.
 
 **Known risk:** some older Android browsers may produce MP4 instead of WebM. If `cv2.VideoCapture` fails to open the file, the endpoint returns `{"success": False, "error": "... failed opening"}`.
+
+**Input modes:** the upload component supports three modes: Record (countdown + camera, recommended), Upload video (file from device, for iOS compatibility or pre-recorded videos), and Manual (direct time entry, no video required).
