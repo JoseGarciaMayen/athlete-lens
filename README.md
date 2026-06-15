@@ -186,6 +186,20 @@ athlete-lens/
 
 ---
 
+# Security (recommended)
+
+The tunnel exposes the API publicly. Anyone with the URL can upload videos and delete metrics. For personal use this is low risk, but it is recommended to protect both subdomains with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust → Applications → Add an application). This adds a login screen (Google, GitHub, or email OTP) in front of the tunnel with no code changes required.
+
+---
+
+# Known limitations and future improvements
+
+- **Video not persisted:** uploaded videos are deleted after processing. Reanalysis with an improved algorithm requires re-recording. A future improvement would store the video (or the annotated crossing/takeoff frame) associated with the metric and expose a reanalysis endpoint.
+
+- **Sprint dashboard fixed to 30m/60m:** custom distances (e.g. 40m) are stored and visible in History but never appear in a dashboard chart. A future improvement would generate charts dynamically for each distinct `distance_m` present in the database.
+
+---
+
 ## Contributing
 
 → [CONTRIBUTING.md](CONTRIBUTING.md)
