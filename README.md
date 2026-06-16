@@ -1,5 +1,12 @@
 # Athlete Lens
 
+![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.136+-green?style=flat-square)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Pose-purple?style=flat-square)
+![React](https://img.shields.io/badge/React-Vite-61dafb?style=flat-square)
+![SQLite](https://img.shields.io/badge/SQLAlchemy-SQLite-orange?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+
 A self-hosted biomechanical analysis suite for tracking athletic performance over time. Processes video to extract physical metrics (vertical jump height, sprint time, horizontal jump distance) and stores them to visualise progress across a season.
 
 Built as a portfolio project. Designed for single-athlete personal use, running on a laptop and accessible from a phone via Cloudflare Tunnel.
