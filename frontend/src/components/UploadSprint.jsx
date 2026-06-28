@@ -98,8 +98,10 @@ function UploadSprint() {
         const settings = videoTrack.getSettings();
         const capabilities = videoTrack.getCapabilities?.() ?? {};
         fpsRef.current = settings.frameRate || 30;
+        let frameCount = 0;
+        const recordingStartMs = performance.now();
         debugMetaRef.current = {
-            fps: settings.frameRate ?? null,
+            measured_fps: null,
             fps_range: capabilities.frameRate
                 ? { min: capabilities.frameRate.min, max: capabilities.frameRate.max }
                 : null,
@@ -109,17 +111,27 @@ function UploadSprint() {
             duration_s: null,
         };
 
+        let countingFrames = true;
+        function countFrame() {
+            if (!countingFrames) return;
+            frameCount++;
+            requestAnimationFrame(countFrame);
+        }
+        requestAnimationFrame(countFrame);
+
         await new Promise((resolve) => setTimeout(resolve, BEEP_GAP * 2 * 1000));
 
         chunksRef.current = [];
         const recorder = new MediaRecorder(stream);
         recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
         recorder.onstop = () => {
+            countingFrames = false;
+            const durationMs = performance.now() - recordingStartMs;
             const stoppedAt = new Date().toISOString();
             if (debugMetaRef.current) {
                 debugMetaRef.current.recording_stopped_at = stoppedAt;
-                const startMs = new Date(debugMetaRef.current.recorded_at).getTime();
-                debugMetaRef.current.duration_s = (Date.now() - startMs) / 1000;
+                debugMetaRef.current.duration_s = durationMs / 1000;
+                debugMetaRef.current.measured_fps = parseFloat((frameCount / (durationMs / 1000)).toFixed(2));
             }
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
