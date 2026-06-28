@@ -127,10 +127,11 @@ function UploadVertical() {
     }
 
     function downloadVideo(blob) {
+        const ts = new Date().toISOString().replace(/[-:]/g, "").replace("T", "_").slice(0, 15);
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `vertical_${sessionDate}.webm`;
+        a.download = `vertical_${ts}.webm`;
         a.click();
         URL.revokeObjectURL(url);
         setSaveToast(true);

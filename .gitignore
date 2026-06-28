@@ -32,3 +32,5 @@ test.py
 .cloudflared/
 
 annotate_sprint.py
+# Local Netlify folder
+.netlify
