@@ -148,18 +148,24 @@ function UploadSprint() {
         const a = document.createElement("a");
         a.href = url;
         a.download = `${baseName}.webm`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
         if (debugMetaRef.current) {
             const json = JSON.stringify(debugMetaRef.current, null, 2);
             const jsonBlob = new Blob([json], { type: "application/json" });
             const jsonUrl = URL.createObjectURL(jsonBlob);
-            const b = document.createElement("a");
-            b.href = jsonUrl;
-            b.download = `${baseName}_debug.json`;
-            b.click();
-            URL.revokeObjectURL(jsonUrl);
+            setTimeout(() => {
+                const b = document.createElement("a");
+                b.href = jsonUrl;
+                b.download = `${baseName}_debug.json`;
+                document.body.appendChild(b);
+                b.click();
+                document.body.removeChild(b);
+                URL.revokeObjectURL(jsonUrl);
+            }, 300);
         }
 
         setSaveToast(true);
