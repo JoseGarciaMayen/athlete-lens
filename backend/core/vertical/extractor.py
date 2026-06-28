@@ -5,31 +5,20 @@ import ultralytics
 GRAVITY_M_S2 = 9.80665
 
 
-def load_video(video_path: str, fps_override: float | None = None) -> dict:
-    """
-    Load video file and returns cap and fps
-    """
+def load_video(video_path: str) -> dict:
     cap = cv2.VideoCapture(video_path)
-
     if not cap.isOpened():
         return {"success": False, "error": f"{video_path} failed opening"}
-    fps = cap.get(cv2.CAP_PROP_FPS)
-
-    if not fps_override and (fps <= 0 or fps > 240):
-        cap.release()
-        return {"success": False, "error": f"Invalid FPS read from video metadata ({fps})."}
-
-    return {"success": True, "cap": cap, "fps": fps}
+    return {"success": True, "cap": cap}
 
 
 def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO, device: str = "cpu") -> dict:
-    """
-    Tracks ankles vertical position during the jump
-    """
     ankle_y = []
+    timestamps_ms = []
 
     while True:
-        ret, frame = cap.read()  # ret indicates if read was successful
+        ts = cap.get(cv2.CAP_PROP_POS_MSEC)
+        ret, frame = cap.read()
         if not ret:
             break
 
@@ -49,39 +38,45 @@ def track_ankles(cap: cv2.VideoCapture, model: ultralytics.YOLO, device: str = "
 
         if valid_ankles:
             ankle_y.append((float(left_ankle[1]) + float(right_ankle[1])) / 2)
+            timestamps_ms.append(ts)
         elif len(ankle_y) > 0:
             ankle_y.append(ankle_y[-1])
+            timestamps_ms.append(ts)
         else:
             return {"success": False, "error": "No person detected in the first frame"}
 
-    return {"success": True, "ankle_y": ankle_y}
+    return {"success": True, "ankle_y": ankle_y, "timestamps_ms": timestamps_ms}
+
+
+def compute_fps_from_timestamps(timestamps_ms: list[float]) -> float | None:
+    if len(timestamps_ms) < 2:
+        return None
+    duration_s = (timestamps_ms[-1] - timestamps_ms[0]) / 1000.0
+    if duration_s <= 0:
+        return None
+    return (len(timestamps_ms) - 1) / duration_s
 
 
 def detect_takeoff_and_landing(ankle_y, fps, rest_frames=15, sustain_frames=2):
-    """
-    Detect takeoff and landing frames from ankle Y position over time.
-    """
     ankle_y = np.array(ankle_y)
 
     if len(ankle_y) < rest_frames + sustain_frames * 2:
         return {"success": False, "error": "Not enough frames to analyze"}
 
-    rest_position = float(np.median(ankle_y[0:rest_frames]))  # median and not mean to avoid outliers
+    rest_position = float(np.median(ankle_y[0:rest_frames]))
     peak_position = float(np.min(ankle_y))
     total_range = rest_position - peak_position
 
     if total_range <= 0:
         return {"success": False, "error": "No upward movement detected"}
 
-    margin = 0.3 * total_range  # dynamic margin to adapt to camera distance
+    margin = 0.3 * total_range
     threshold = rest_position - margin
 
     takeoff_frame = None
     landing_frame = None
 
-    # Takeoff
     for i in range(rest_frames, len(ankle_y) - sustain_frames):
-        # Check if current frame and the next 'sustain_frames' all cross the threshold
         if np.all(ankle_y[i : i + sustain_frames] < threshold):
             takeoff_frame = i
             break
@@ -89,11 +84,9 @@ def detect_takeoff_and_landing(ankle_y, fps, rest_frames=15, sustain_frames=2):
     if takeoff_frame is None:
         return {"success": False, "error": "Takeoff not detected"}
 
-    # Landing
     peak_frame = int(np.argmin(ankle_y))
 
     for i in range(peak_frame, len(ankle_y) - sustain_frames):
-        # Check if current frame and the next 'sustain_frames' all cross the threshold
         if np.all(ankle_y[i : i + sustain_frames] > threshold):
             landing_frame = i
             break
@@ -112,10 +105,7 @@ def detect_takeoff_and_landing(ankle_y, fps, rest_frames=15, sustain_frames=2):
     }
 
 
-def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: int) -> dict:
-    """
-    Computes how high the jump is and returns its value in centimeters and its flight time in milliseconds
-    """
+def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: float) -> dict:
     if landing_frame <= takeoff_frame:
         return {"success": False, "error": "Landing frame is previous or equal to takeoff frame"}
 
@@ -128,16 +118,11 @@ def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: int) -> dic
 
 
 def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_override: float | None = None) -> dict:
-    """
-    Orchestrates the full vertical analysis pipeline.
-    Loads video, tracks ankles, detects takeoff and landing frames and computes jump height and flight time.
-    """
-    video_result = load_video(video_path, fps_override)
+    video_result = load_video(video_path)
 
     if not video_result["success"]:
         return {"success": False, "error": video_result["error"]}
     cap = video_result["cap"]
-    fps = fps_override if fps_override else video_result["fps"]
 
     tracking_result = track_ankles(cap, model, device)
     cap.release()
@@ -145,6 +130,13 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
     if not tracking_result["success"]:
         return {"success": False, "error": tracking_result["error"]}
     ankle_y = tracking_result["ankle_y"]
+    timestamps_ms = tracking_result["timestamps_ms"]
+
+    fps = compute_fps_from_timestamps(timestamps_ms)
+    if fps is None or fps <= 0 or fps > 240:
+        fps = fps_override
+    if fps is None or fps <= 0 or fps > 240:
+        return {"success": False, "error": "Could not determine video FPS"}
 
     detection_result = detect_takeoff_and_landing(ankle_y, fps)
 

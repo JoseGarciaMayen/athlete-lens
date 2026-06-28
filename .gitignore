@@ -10,6 +10,7 @@ backend/uv.lock
 *.db
 
 .env
+.env.production
 
 frontend/node_modules/
 

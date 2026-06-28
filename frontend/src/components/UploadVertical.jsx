@@ -62,7 +62,15 @@ function UploadVertical() {
 
         let stream;
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { frameRate: { ideal: 60, max: 120 } }, audio: false });
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                    frameRate: { ideal: 60, max: 120 },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                },
+                audio: false,
+            });
         } catch {
             setError("Could not access camera");
             return;
@@ -364,9 +372,14 @@ function UploadVertical() {
                     {result.flight_time_ms != null && (
                         <p>Flight time: {Number(result.flight_time_ms).toFixed(0)} ms</p>
                     )}
+                    {result.fps_used != null && (
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                            FPS: {Number(result.fps_used).toFixed(2)}
+                        </p>
+                    )}
                     {result.takeoff_frame != null && (
-                        <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                            Frames: {result.takeoff_frame} → {result.landing_frame} ({result.fps_used} fps)
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                            Frames: {result.takeoff_frame} → {result.landing_frame}
                         </p>
                     )}
                 </div>

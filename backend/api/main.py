@@ -35,10 +35,11 @@ app = FastAPI(title="Athlete Lens API", version="0.1.0", lifespan=lifespan)
 
 _frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+_localhost_origins = [f"http://localhost:{p}" for p in range(5170, 5180)]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", _frontend_url],
+    allow_origins=[*_localhost_origins, _frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

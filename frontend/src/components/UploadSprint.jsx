@@ -63,7 +63,15 @@ function UploadSprint() {
 
         let stream;
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { frameRate: { ideal: 60, max: 120 } }, audio: false });
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                    frameRate: { ideal: 60, max: 120 },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                },
+                audio: false,
+            });
         } catch {
             setError("Could not access camera");
             return;
@@ -362,9 +370,14 @@ function UploadSprint() {
             {result && (
                 <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded">
                     <p className="font-semibold">Sprint time: {result.sprint_time_s.toFixed(3)} s</p>
-                    {result.crossing_frame && (
-                        <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                            Detected at frame {result.crossing_frame} ({result.fps_used} fps)
+                    {result.fps_used != null && (
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                            FPS: {Number(result.fps_used).toFixed(2)}
+                        </p>
+                    )}
+                    {result.crossing_frame != null && (
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                            Detected at frame {result.crossing_frame}
                         </p>
                     )}
                 </div>

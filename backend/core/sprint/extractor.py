@@ -2,40 +2,16 @@ import cv2
 import ultralytics
 
 
-def load_video(video_path: str, fps_override: float | None = None) -> dict:
-    """
-    Load video file and return cap and metadata.
-    """
+def load_video(video_path: str) -> dict:
     cap = cv2.VideoCapture(video_path)
-
     if not cap.isOpened():
         return {"success": False, "error": f"{video_path} failed opening"}
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
-
-    if not fps_override and (fps <= 0 or fps > 240):
-        cap.release()
-        return {"success": False, "error": f"Invalid FPS read from video metadata ({fps})."}
-
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-
-    if total_frames == 0:
-        cap.release()
-        return {"success": False, "error": "Video has no frames"}
-
-    return {
-        "success": True,
-        "cap": cap,
-        "fps": fps,
-        "total_frames": total_frames,
-        "width": width,
-    }
+    return {"success": True, "cap": cap, "width": width}
 
 
-def detect_finish_crossing(
-    cap: cv2.VideoCapture, width: int, fps: float, model: ultralytics.YOLO, device: str = "cpu"
-) -> dict:
+def detect_finish_crossing(cap: cv2.VideoCapture, width: int, model: ultralytics.YOLO, device: str = "cpu") -> dict:
     """
     Iterate frames until the athlete's hip center crosses the horizontal midpoint (width / 2).
 
@@ -50,11 +26,15 @@ def detect_finish_crossing(
     direction = None  # "ltr" | "rtl"
 
     frame_idx = 0
+    all_timestamps_ms = []
+
     while True:
+        ts = cap.get(cv2.CAP_PROP_POS_MSEC)
         ret, frame = cap.read()
         if not ret:
             break
 
+        all_timestamps_ms.append(ts)
         results = model(frame, verbose=False, device=device)
 
         has_detection = results[0].boxes is not None and len(results[0].boxes) > 0
@@ -80,7 +60,6 @@ def detect_finish_crossing(
                 x1, _, x2, _ = box
                 hip_cx = (x1 + x2) / 2
 
-            # Infer direction from first detection
             if direction is None:
                 direction = "ltr" if hip_cx <= midpoint_x else "rtl"
 
@@ -90,7 +69,8 @@ def detect_finish_crossing(
                 return {
                     "success": True,
                     "crossing_frame": frame_idx,
-                    "sprint_time_s": round(frame_idx / fps, 3),
+                    "crossing_timestamp_ms": ts,
+                    "all_timestamps_ms": all_timestamps_ms,
                 }
 
         frame_idx += 1
@@ -98,31 +78,42 @@ def detect_finish_crossing(
     return {"success": False, "error": "Athlete never crossed the frame midpoint"}
 
 
+def compute_fps_from_timestamps(timestamps_ms: list[float]) -> float | None:
+    if len(timestamps_ms) < 2:
+        return None
+    duration_s = (timestamps_ms[-1] - timestamps_ms[0]) / 1000.0
+    if duration_s <= 0:
+        return None
+    return (len(timestamps_ms) - 1) / duration_s
+
+
 def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_override: float | None = None) -> dict:
-    """
-    Orchestrates the full sprint analysis pipeline.
-    Loads video, iterates frames, detects the finish crossing and computes sprint time.
-    """
-    video_result = load_video(video_path, fps_override)
+    video_result = load_video(video_path)
 
     if not video_result["success"]:
         return {"success": False, "error": video_result["error"]}
 
     cap = video_result["cap"]
-    print(f"analyze called with fps_override: {fps_override}")
-    fps = fps_override if fps_override else video_result["fps"]
-    print(f"fps used: {fps}")
     width = video_result["width"]
 
-    crossing_result = detect_finish_crossing(cap, width, fps, model, device)
+    crossing_result = detect_finish_crossing(cap, width, model, device)
     cap.release()
 
     if not crossing_result["success"]:
         return {"success": False, "error": crossing_result["error"]}
 
+    all_timestamps_ms = crossing_result["all_timestamps_ms"]
+    fps = compute_fps_from_timestamps(all_timestamps_ms)
+    if fps is None or fps <= 0 or fps > 240:
+        fps = fps_override
+    if fps is None or fps <= 0 or fps > 240:
+        return {"success": False, "error": "Could not determine video FPS"}
+
+    sprint_time_s = round(crossing_result["crossing_timestamp_ms"] / 1000.0, 3)
+
     return {
         "success": True,
         "crossing_frame": crossing_result["crossing_frame"],
         "fps_used": fps,
-        "sprint_time_s": crossing_result["sprint_time_s"],
+        "sprint_time_s": sprint_time_s,
     }
