@@ -121,10 +121,7 @@ def validate_frame_gaps(
         if gap > warn_ms:
             return {
                 "success": False,
-                "error": (
-                    f"Capture error: suspicious {gap:.0f}ms gap between frames "
-                    f"{i} and {i + 1} in flight window"
-                ),
+                "error": (f"Capture error: suspicious {gap:.0f}ms gap between frames {i} and {i + 1} in flight window"),
             }
     return {"success": True}
 

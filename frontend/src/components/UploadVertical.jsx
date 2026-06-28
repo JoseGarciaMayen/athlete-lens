@@ -30,6 +30,7 @@ function UploadVertical() {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
     const [saveToast, setSaveToast] = useState(false);
+    const [downloadEnabled, setDownloadEnabled] = useState(true);
 
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
@@ -103,7 +104,7 @@ function UploadVertical() {
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
             const blob = new Blob(chunksRef.current, { type: "video/webm" });
-            downloadVideo(blob);
+            if (downloadEnabled) downloadVideo(blob);
             uploadVideo(blob);
         };
 
@@ -290,6 +291,10 @@ function UploadVertical() {
                                 onChange={(e) => setRecordingS(e.target.value)} placeholder="Custom duration"
                                 className="block w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
                         </div>
+                        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                            <input type="checkbox" checked={downloadEnabled} onChange={(e) => setDownloadEnabled(e.target.checked)} className="w-4 h-4" />
+                            Save video to device
+                        </label>
                         <button type="button" onClick={handleStartCountdown}
                             className="bg-blue-600 text-white rounded px-4 py-2">
                             Start countdown
