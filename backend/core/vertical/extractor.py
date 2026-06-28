@@ -105,6 +105,30 @@ def detect_takeoff_and_landing(ankle_y, fps=None, rest_frames=15, sustain_frames
     }
 
 
+def validate_frame_gaps(
+    timestamps_ms: list[float], start_frame: int, end_frame: int, warn_ms: float = 80.0, error_ms: float = 100.0
+) -> dict:
+    for i in range(start_frame, min(end_frame, len(timestamps_ms) - 1)):
+        gap = timestamps_ms[i + 1] - timestamps_ms[i]
+        if gap > error_ms:
+            return {
+                "success": False,
+                "error": (
+                    f"Capture error: {gap:.0f}ms gap between frames {i} and {i + 1} "
+                    f"in flight window (max allowed: {error_ms:.0f}ms)"
+                ),
+            }
+        if gap > warn_ms:
+            return {
+                "success": False,
+                "error": (
+                    f"Capture error: suspicious {gap:.0f}ms gap between frames "
+                    f"{i} and {i + 1} in flight window"
+                ),
+            }
+    return {"success": True}
+
+
 def compute_jump_height(flight_time_ms: float) -> dict:
     if flight_time_ms <= 0:
         return {"success": False, "error": "Flight time must be greater than 0"}
@@ -138,6 +162,10 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
         return {"success": False, "error": detection_result["error"]}
     takeoff_frame = detection_result["takeoff_frame"]
     landing_frame = detection_result["landing_frame"]
+
+    gap_result = validate_frame_gaps(timestamps_ms, takeoff_frame, landing_frame)
+    if not gap_result["success"]:
+        return {"success": False, "error": gap_result["error"]}
 
     flight_time_ms = timestamps_ms[landing_frame] - timestamps_ms[takeoff_frame]
 
