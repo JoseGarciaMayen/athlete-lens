@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../lib/api";
 import {
     LineChart,
     Line,
@@ -91,7 +92,7 @@ function Dashboard() {
     useEffect(() => {
         async function fetchDashboardData() {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`);
+                const response = await apiFetch("/api/dashboard");
                 if (!response.ok) {
                     throw new Error("Failed to fetch dashboard data");
                 }

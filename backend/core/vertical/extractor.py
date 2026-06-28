@@ -57,7 +57,7 @@ def compute_fps_from_timestamps(timestamps_ms: list[float]) -> float | None:
     return (len(timestamps_ms) - 1) / duration_s
 
 
-def detect_takeoff_and_landing(ankle_y, fps, rest_frames=15, sustain_frames=2):
+def detect_takeoff_and_landing(ankle_y, fps=None, rest_frames=15, sustain_frames=2):
     ankle_y = np.array(ankle_y)
 
     if len(ankle_y) < rest_frames + sustain_frames * 2:
@@ -105,16 +105,13 @@ def detect_takeoff_and_landing(ankle_y, fps, rest_frames=15, sustain_frames=2):
     }
 
 
-def compute_jump_height(takeoff_frame: int, landing_frame: int, fps: float) -> dict:
-    if landing_frame <= takeoff_frame:
-        return {"success": False, "error": "Landing frame is previous or equal to takeoff frame"}
+def compute_jump_height(flight_time_ms: float) -> dict:
+    if flight_time_ms <= 0:
+        return {"success": False, "error": "Flight time must be greater than 0"}
 
-    if fps <= 0:
-        return {"success": False, "error": "FPS must be greater than 0"}
-
-    t = (landing_frame - takeoff_frame) / fps
+    t = flight_time_ms / 1000.0
     h = (GRAVITY_M_S2 * (t**2)) / 8
-    return {"success": True, "jump_height_cm": h * 100, "flight_time_ms": t * 1000}
+    return {"success": True, "jump_height_cm": h * 100}
 
 
 def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_override: float | None = None) -> dict:
@@ -132,28 +129,29 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
     ankle_y = tracking_result["ankle_y"]
     timestamps_ms = tracking_result["timestamps_ms"]
 
-    fps = compute_fps_from_timestamps(timestamps_ms)
-    if fps is None or fps <= 0 or fps > 240:
-        fps = fps_override
-    if fps is None or fps <= 0 or fps > 240:
-        return {"success": False, "error": "Could not determine video FPS"}
+    if len(timestamps_ms) < 2:
+        return {"success": False, "error": "Not enough frames to analyze"}
 
-    detection_result = detect_takeoff_and_landing(ankle_y, fps)
+    detection_result = detect_takeoff_and_landing(ankle_y, fps=None)
 
     if not detection_result["success"]:
         return {"success": False, "error": detection_result["error"]}
     takeoff_frame = detection_result["takeoff_frame"]
     landing_frame = detection_result["landing_frame"]
 
-    height_result = compute_jump_height(takeoff_frame, landing_frame, fps)
+    flight_time_ms = timestamps_ms[landing_frame] - timestamps_ms[takeoff_frame]
+
+    height_result = compute_jump_height(flight_time_ms)
     if not height_result["success"]:
         return {"success": False, "error": height_result["error"]}
+
+    local_fps = compute_fps_from_timestamps(timestamps_ms[takeoff_frame : landing_frame + 1])
 
     return {
         "success": True,
         "jump_height_cm": height_result["jump_height_cm"],
-        "flight_time_ms": height_result["flight_time_ms"],
+        "flight_time_ms": flight_time_ms,
         "takeoff_frame": takeoff_frame,
         "landing_frame": landing_frame,
-        "fps_used": fps,
+        "fps_used": local_fps,
     }

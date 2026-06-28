@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { apiFetch } from "../lib/api";
 
 const BEEP_FREQ = 1500;
 const BEEP_DURATION = 0.3;
@@ -158,10 +159,7 @@ function UploadVertical() {
         if (notes) formData.append("notes", notes);
 
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/analyze/vertical`,
-                { method: "POST", body: formData }
-            );
+            const response = await apiFetch("/api/analyze/vertical", { method: "POST", body: formData });
             const data = await response.json();
             if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
             else { setResult(data); setPhase("done"); }
@@ -335,10 +333,7 @@ function UploadVertical() {
                                 formData.append("jump_height_cm", parseFloat(manualHeightCm));
                                 if (notes) formData.append("notes", notes);
                                 try {
-                                    const response = await fetch(
-                                        `${import.meta.env.VITE_API_URL}/api/analyze/vertical`,
-                                        { method: "POST", body: formData }
-                                    );
+                                    const response = await apiFetch("/api/analyze/vertical", { method: "POST", body: formData });
                                     const data = await response.json();
                                     if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
                                     else { setResult(data); setPhase("done"); }
