@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { apiFetch } from "../lib/api";
 
 const BEEP_FREQ = 1500;
 const BEEP_DURATION = 0.50;
@@ -154,7 +153,10 @@ function UploadSprint() {
         if (notes) formData.append("notes", notes);
 
         try {
-            const response = await apiFetch("/api/analyze/sprint", { method: "POST", body: formData });
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/analyze/sprint`,
+                { method: "POST", body: formData }
+            );
             const data = await response.json();
             if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
             else { setResult(data); setPhase("done"); }
@@ -334,7 +336,10 @@ function UploadSprint() {
                                 formData.append("sprint_time_s", parseFloat(manualTimeS));
                                 if (notes) formData.append("notes", notes);
                                 try {
-                                    const response = await apiFetch("/api/analyze/sprint", { method: "POST", body: formData });
+                                    const response = await fetch(
+                                        `${import.meta.env.VITE_API_URL}/api/analyze/sprint`,
+                                        { method: "POST", body: formData }
+                                    );
                                     const data = await response.json();
                                     if (!response.ok) { setError(data.detail || "Unknown error"); setPhase("error"); }
                                     else { setResult(data); setPhase("done"); }

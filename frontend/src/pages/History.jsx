@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { apiFetch } from "../lib/api";
 
 const TYPE_LABELS = {
     vertical: "Vertical Jump",
@@ -58,7 +57,7 @@ function History() {
         setLoading(true);
         setError(null);
         try {
-            const response = await apiFetch("/api/metrics");
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/metrics`);
             if (!response.ok) {
                 throw new Error("Failed to fetch metrics");
             }
@@ -80,8 +79,8 @@ function History() {
         }
 
         try {
-            const response = await apiFetch(
-                `/api/metrics/${metric.type}/${metric.id}`,
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/metrics/${metric.type}/${metric.id}`,
                 { method: "DELETE" }
             );
 
@@ -102,8 +101,8 @@ function History() {
         if (!newDate || newDate === metric.date) return;
 
         try {
-            const response = await apiFetch(
-                `/api/metrics/${metric.type}/${metric.id}/date?new_date=${newDate}`,
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/metrics/${metric.type}/${metric.id}/date?new_date=${newDate}`,
                 { method: "PATCH" }
             );
             if (!response.ok) throw new Error("Failed to update date");

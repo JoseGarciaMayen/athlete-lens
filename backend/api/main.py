@@ -14,7 +14,8 @@ from contextlib import asynccontextmanager
 from ultralytics import YOLO
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "../../frontend/.env"))
+_frontend_dir = os.path.join(os.path.dirname(__file__), "../../frontend")
+load_dotenv(os.path.join(_frontend_dir, ".env"))
 
 
 @asynccontextmanager
@@ -33,13 +34,16 @@ async def lifespan(app):
 
 app = FastAPI(title="Athlete Lens API", version="0.1.0", lifespan=lifespan)
 
-_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-
 _localhost_origins = [f"http://localhost:{p}" for p in range(5170, 5180)]
+_allowed_origins = [
+    *_localhost_origins,
+    "https://athletelens.josegarciamayen.com",
+    os.getenv("FRONTEND_URL", ""),
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[*_localhost_origins, _frontend_url],
+    allow_origins=[o for o in _allowed_origins if o],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

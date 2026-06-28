@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { apiFetch } from "../lib/api";
 
 function UploadHorizontal() {
     const [sessionDate, setSessionDate] = useState(
@@ -26,10 +25,10 @@ function UploadHorizontal() {
         }
 
         try {
-            const response = await apiFetch("/api/analyze/horizontal", {
-                method: "POST",
-                body: formData,
-            });
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/analyze/horizontal`,
+                { method: "POST", body: formData }
+            );
 
             const data = await response.json();
 
