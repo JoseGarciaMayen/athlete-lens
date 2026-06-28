@@ -62,15 +62,7 @@ function UploadVertical() {
 
         let stream;
         try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: "environment" },
-                    frameRate: { ideal: 60, max: 120 },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                },
-                audio: false,
-            });
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         } catch {
             setError("Could not access camera");
             return;
