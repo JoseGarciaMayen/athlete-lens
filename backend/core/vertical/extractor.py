@@ -126,6 +126,26 @@ def validate_frame_gaps(
     return {"success": True}
 
 
+def interpolate_threshold_crossing(
+    ankle_y: list[float],
+    timestamps_ms: list[float],
+    frame: int,
+    threshold: float,
+    direction: str,
+) -> float:
+    """Return interpolated timestamp (ms) of threshold crossing between frame-1 and frame."""
+    if frame <= 0 or frame >= len(timestamps_ms):
+        return timestamps_ms[frame]
+    y0, y1 = ankle_y[frame - 1], ankle_y[frame]
+    t0, t1 = timestamps_ms[frame - 1], timestamps_ms[frame]
+    dy = y1 - y0
+    if dy == 0:
+        return t0
+    alpha = (threshold - y0) / dy
+    alpha = max(0.0, min(1.0, alpha))
+    return t0 + alpha * (t1 - t0)
+
+
 def compute_jump_height(flight_time_ms: float) -> dict:
     if flight_time_ms <= 0:
         return {"success": False, "error": "Flight time must be greater than 0"}
@@ -164,7 +184,10 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
     if not gap_result["success"]:
         return {"success": False, "error": gap_result["error"]}
 
-    flight_time_ms = timestamps_ms[landing_frame] - timestamps_ms[takeoff_frame]
+    threshold = detection_result["threshold"]
+    t_takeoff = interpolate_threshold_crossing(ankle_y, timestamps_ms, takeoff_frame, threshold, "down")
+    t_landing = interpolate_threshold_crossing(ankle_y, timestamps_ms, landing_frame, threshold, "up")
+    flight_time_ms = t_landing - t_takeoff
 
     height_result = compute_jump_height(flight_time_ms)
     if not height_result["success"]:
