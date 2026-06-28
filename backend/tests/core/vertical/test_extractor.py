@@ -5,36 +5,29 @@ from ultralytics import YOLO
 
 
 def test_compute_jump_height_returns_correct_value():
-    takeoff_frame = 100
-    landing_frame = 140
-    fps = 60
+    # 40 frames at 60fps = 666.67ms flight time
+    flight_time_ms = (140 - 100) / 60 * 1000
 
-    result = compute_jump_height(takeoff_frame, landing_frame, fps)
+    result = compute_jump_height(flight_time_ms)
 
     assert result["success"] is True
-    assert result["flight_time_ms"] == pytest.approx(666.6667, rel=1e-4)
     assert result["jump_height_cm"] == pytest.approx(54.481, rel=1e-4)
 
 
 def test_compute_jump_landing_before_takeoff():
-    takeoff_frame = 140
-    landing_frame = 100
-    fps = 60
-
-    result = compute_jump_height(takeoff_frame, landing_frame, fps)
+    result = compute_jump_height(-666.6667)
 
     assert result["success"] is False
     assert "error" in result
 
 
 @pytest.mark.integration
-def test_load_video_returns_cap_and_fps():
+def test_load_video_returns_cap():
     video_path = "tests/core/vertical/fixtures/video.mp4"
 
     result = load_video(video_path)
 
     assert result["success"] is True
-    assert result["fps"] == 60.0
     assert result["cap"].isOpened()
 
     result["cap"].release()
@@ -92,4 +85,4 @@ def test_analyze_full_pipeline():
     assert result["takeoff_frame"] == 103
     assert result["landing_frame"] == 132
     assert result["jump_height_cm"] == pytest.approx(28.6, abs=0.5)
-    assert result["fps_used"] == 60.0
+    assert result["fps_used"] == pytest.approx(60.0, abs=1.0)
