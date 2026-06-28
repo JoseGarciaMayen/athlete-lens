@@ -203,8 +203,6 @@ Apply Access only to the frontend domain, not the API domain. Applying Access to
 
 # Known limitations and future improvements
 
-- **Video not persisted:** uploaded videos are deleted after processing. Reanalysis with an improved algorithm requires re-recording. A future improvement would store the video (or the annotated crossing/takeoff frame) associated with the metric and expose a reanalysis endpoint.
-
 - **Sprint dashboard fixed to 30m/60m:** custom distances (e.g. 40m) are stored and visible in History but never appear in a dashboard chart. A future improvement would generate charts dynamically for each distinct `distance_m` present in the database.
 
 ---
