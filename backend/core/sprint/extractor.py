@@ -11,33 +11,31 @@ def load_video(video_path: str, fps_override: float | None = None) -> dict:
     if not cap.isOpened():
         return {"success": False, "error": f"{video_path} failed opening"}
 
-    fps          = cap.get(cv2.CAP_PROP_FPS)
+    fps = cap.get(cv2.CAP_PROP_FPS)
 
     if not fps_override and (fps <= 0 or fps > 240):
         cap.release()
         return {"success": False, "error": f"Invalid FPS read from video metadata ({fps})."}
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     if total_frames == 0:
         cap.release()
         return {"success": False, "error": "Video has no frames"}
 
     return {
-        "success":      True,
-        "cap":          cap,
-        "fps":          fps,
+        "success": True,
+        "cap": cap,
+        "fps": fps,
         "total_frames": total_frames,
-        "width":        width,
+        "width": width,
     }
 
 
 def detect_finish_crossing(
-    cap: cv2.VideoCapture,
-    width: int, fps: float,
-    model: ultralytics.YOLO,
-    device: str = "cpu") -> dict:
+    cap: cv2.VideoCapture, width: int, fps: float, model: ultralytics.YOLO, device: str = "cpu"
+) -> dict:
     """
     Iterate frames until the athlete's hip center crosses the horizontal midpoint (width / 2).
 
@@ -49,7 +47,7 @@ def detect_finish_crossing(
     Stops as soon as the crossing is detected (early exit).
     """
     midpoint_x = width / 2
-    direction  = None  # "ltr" | "rtl"
+    direction = None  # "ltr" | "rtl"
 
     frame_idx = 0
     while True:
@@ -62,38 +60,37 @@ def detect_finish_crossing(
         has_detection = results[0].boxes is not None and len(results[0].boxes) > 0
 
         if has_detection:
-            confs    = results[0].boxes.conf.tolist()
+            confs = results[0].boxes.conf.tolist()
             best_idx = confs.index(max(confs))
 
             hip_cx = None
             if results[0].keypoints is not None and len(results[0].keypoints.xy) > best_idx:
-                kps       = results[0].keypoints.xy[best_idx]
-                left_hip  = kps[11].tolist()
+                kps = results[0].keypoints.xy[best_idx]
+                left_hip = kps[11].tolist()
                 right_hip = kps[12].tolist()
 
-                left_valid  = left_hip[0] > 0 and left_hip[1] > 0
+                left_valid = left_hip[0] > 0 and left_hip[1] > 0
                 right_valid = right_hip[0] > 0 and right_hip[1] > 0
 
                 if left_valid and right_valid:
                     hip_cx = (left_hip[0] + right_hip[0]) / 2
 
             if hip_cx is None:
-                box           = results[0].boxes.xyxy[best_idx].tolist()
+                box = results[0].boxes.xyxy[best_idx].tolist()
                 x1, _, x2, _ = box
-                hip_cx        = (x1 + x2) / 2
+                hip_cx = (x1 + x2) / 2
 
             # Infer direction from first detection
             if direction is None:
                 direction = "ltr" if hip_cx <= midpoint_x else "rtl"
 
-            crossed = (direction == "ltr" and hip_cx > midpoint_x) or \
-                      (direction == "rtl" and hip_cx < midpoint_x)
+            crossed = (direction == "ltr" and hip_cx > midpoint_x) or (direction == "rtl" and hip_cx < midpoint_x)
 
             if crossed:
                 return {
-                    "success":        True,
+                    "success": True,
                     "crossing_frame": frame_idx,
-                    "sprint_time_s":  round(frame_idx / fps, 3),
+                    "sprint_time_s": round(frame_idx / fps, 3),
                 }
 
         frame_idx += 1
@@ -111,7 +108,7 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
     if not video_result["success"]:
         return {"success": False, "error": video_result["error"]}
 
-    cap   = video_result["cap"]
+    cap = video_result["cap"]
     print(f"analyze called with fps_override: {fps_override}")
     fps = fps_override if fps_override else video_result["fps"]
     print(f"fps used: {fps}")
@@ -124,8 +121,8 @@ def analyze(video_path: str, model: ultralytics.YOLO, device: str = "cpu", fps_o
         return {"success": False, "error": crossing_result["error"]}
 
     return {
-        "success":        True,
+        "success": True,
         "crossing_frame": crossing_result["crossing_frame"],
-        "fps_used":       fps,
-        "sprint_time_s":  crossing_result["sprint_time_s"],
+        "fps_used": fps,
+        "sprint_time_s": crossing_result["sprint_time_s"],
     }

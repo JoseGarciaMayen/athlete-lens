@@ -23,10 +23,7 @@ def test_get_athlete_profile_404_when_no_athlete(client, db_session):
 def test_put_athlete_profile_updates_values(client, db_session):
     create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
-    response = client.put(
-        "/api/athlete",
-        json={"name": "Updated", "weight_kg": 75, "height_cm": 178}
-    )
+    response = client.put("/api/athlete", json={"name": "Updated", "weight_kg": 75, "height_cm": 178})
 
     assert response.status_code == 200
     data = response.json()
@@ -36,10 +33,7 @@ def test_put_athlete_profile_updates_values(client, db_session):
 
 
 def test_put_athlete_profile_404_when_no_athlete(client, db_session):
-    response = client.put(
-        "/api/athlete",
-        json={"name": "Updated", "weight_kg": 75, "height_cm": 178}
-    )
+    response = client.put("/api/athlete", json={"name": "Updated", "weight_kg": 75, "height_cm": 178})
 
     assert response.status_code == 404
 
@@ -47,10 +41,7 @@ def test_put_athlete_profile_404_when_no_athlete(client, db_session):
 def test_post_session_creates_session(client, db_session):
     create_athlete(db_session, name="Test", weight_kg=80, height_cm=180)
 
-    response = client.post(
-        "/api/sessions",
-        json={"date": "2026-06-09", "notes": "test session"}
-    )
+    response = client.post("/api/sessions", json={"date": "2026-06-09", "notes": "test session"})
 
     assert response.status_code == 200
     data = response.json()
@@ -58,10 +49,7 @@ def test_post_session_creates_session(client, db_session):
 
 
 def test_post_session_404_when_no_athlete(client, db_session):
-    response = client.post(
-        "/api/sessions",
-        json={"date": "2026-06-09", "notes": "test session"}
-    )
+    response = client.post("/api/sessions", json={"date": "2026-06-09", "notes": "test session"})
 
     assert response.status_code == 404
 

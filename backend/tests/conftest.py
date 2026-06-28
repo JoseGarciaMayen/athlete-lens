@@ -8,16 +8,9 @@ from api.main import app
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
-engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 
-TestingSessionLocal = sessionmaker(
-    bind=engine,
-    autocommit=False,
-    autoflush=False
-)
+TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
 @pytest.fixture
@@ -39,7 +32,8 @@ def client(db_session):
     if not hasattr(app.state, "model"):
         import torch
         from ultralytics import YOLO
-        app.state.model  = YOLO("yolov8n-pose.pt")
+
+        app.state.model = YOLO("yolov8n-pose.pt")
         app.state.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     yield TestClient(app)

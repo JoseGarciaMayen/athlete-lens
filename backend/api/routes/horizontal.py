@@ -10,13 +10,14 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.post("/analyze/horizontal")
 def analyze_horizontal(
     session_date: str = Form(...),
     jump_distance_cm: float = Form(...),
     notes: str = Form(None),
-    db: Session = Depends(get_db)
-    ):
+    db: Session = Depends(get_db),
+):
     athlete = get_athlete(db)
     if athlete is None:
         raise HTTPException(status_code=400, detail="No athlete profile found. Please create your profile first.")
@@ -30,8 +31,4 @@ def analyze_horizontal(
 
     metric = create_horizontal_metric(db=db, session_id=session.id, jump_distance_cm=jump_distance_cm)
 
-    return {
-        "success": True,
-        "jump_distance_cm": metric.jump_distance_cm,
-        "session_id": metric.session_id
-    }
+    return {"success": True, "jump_distance_cm": metric.jump_distance_cm, "session_id": metric.session_id}

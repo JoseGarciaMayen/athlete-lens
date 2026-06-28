@@ -66,10 +66,10 @@ def analyze_sprint(
             raise HTTPException(status_code=422, detail=result["error"])
     else:
         result = {
-            "success":        True,
-            "sprint_time_s":  sprint_time_s,
+            "success": True,
+            "sprint_time_s": sprint_time_s,
             "crossing_frame": None,
-            "fps_used":       None,
+            "fps_used": None,
         }
 
     create_sprint_metric(

@@ -3,10 +3,13 @@ from db.crud import create_athlete
 
 
 def test_analyze_sprint_no_file_no_manual(client):
-    response = client.post("/api/analyze/sprint", data={
-        "session_date": "2026-06-09",
-        "distance_m": "60",
-    })
+    response = client.post(
+        "/api/analyze/sprint",
+        data={
+            "session_date": "2026-06-09",
+            "distance_m": "60",
+        },
+    )
 
     assert response.status_code == 422
 
@@ -14,11 +17,14 @@ def test_analyze_sprint_no_file_no_manual(client):
 def test_analyze_sprint_manual_entry(client, db_session):
     create_athlete(db_session, name="Test Athlete")
 
-    response = client.post("/api/analyze/sprint", data={
-        "session_date": "2026-06-09",
-        "distance_m":   "60",
-        "sprint_time_s": "7.42",
-    })
+    response = client.post(
+        "/api/analyze/sprint",
+        data={
+            "session_date": "2026-06-09",
+            "distance_m": "60",
+            "sprint_time_s": "7.42",
+        },
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -31,11 +37,14 @@ def test_analyze_sprint_manual_entry(client, db_session):
 def test_analyze_sprint_manual_entry_30m(client, db_session):
     create_athlete(db_session, name="Test Athlete")
 
-    response = client.post("/api/analyze/sprint", data={
-        "session_date":  "2026-06-09",
-        "distance_m":    "30",
-        "sprint_time_s": "4.10",
-    })
+    response = client.post(
+        "/api/analyze/sprint",
+        data={
+            "session_date": "2026-06-09",
+            "distance_m": "30",
+            "sprint_time_s": "4.10",
+        },
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -44,11 +53,14 @@ def test_analyze_sprint_manual_entry_30m(client, db_session):
 
 
 def test_analyze_sprint_no_athlete(client):
-    response = client.post("/api/analyze/sprint", data={
-        "session_date":  "2026-06-09",
-        "distance_m":    "60",
-        "sprint_time_s": "7.42",
-    })
+    response = client.post(
+        "/api/analyze/sprint",
+        data={
+            "session_date": "2026-06-09",
+            "distance_m": "60",
+            "sprint_time_s": "7.42",
+        },
+    )
 
     assert response.status_code == 400
 
@@ -56,10 +68,13 @@ def test_analyze_sprint_no_athlete(client):
 def test_analyze_sprint_invalid_date(client, db_session):
     create_athlete(db_session, name="Test Athlete")
 
-    response = client.post("/api/analyze/sprint", data={
-        "session_date":  "not-a-date",
-        "distance_m":    "60",
-        "sprint_time_s": "7.42",
-    })
+    response = client.post(
+        "/api/analyze/sprint",
+        data={
+            "session_date": "not-a-date",
+            "distance_m": "60",
+            "sprint_time_s": "7.42",
+        },
+    )
 
     assert response.status_code == 422

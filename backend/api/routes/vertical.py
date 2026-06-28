@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.post("/analyze/vertical")
 def analyze_vertical(
     request: Request,
@@ -21,8 +22,8 @@ def analyze_vertical(
     notes: str = Form(None),
     jump_height_cm: float | None = Form(None),
     fps: float | None = Form(None),
-    db: Session = Depends(get_db)
-    ):
+    db: Session = Depends(get_db),
+):
     if file is None and jump_height_cm is None:
         raise HTTPException(status_code=422, detail="Either file or jump_height_cm is required")
 
@@ -79,7 +80,7 @@ def analyze_vertical(
         flight_time_ms=result["flight_time_ms"],
         fps_used=result["fps_used"],
         takeoff_frame=result["takeoff_frame"],
-        landing_frame=result["landing_frame"]
-        )
+        landing_frame=result["landing_frame"],
+    )
 
     return result

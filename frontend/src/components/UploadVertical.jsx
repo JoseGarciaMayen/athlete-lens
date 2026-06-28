@@ -29,6 +29,7 @@ function UploadVertical() {
     const [recordingLeft, setRecordingLeft] = useState(null);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
+    const [saveToast, setSaveToast] = useState(false);
 
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
@@ -101,7 +102,9 @@ function UploadVertical() {
         recorder.onstop = () => {
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
-            uploadVideo();
+            const blob = new Blob(chunksRef.current, { type: "video/webm" });
+            downloadVideo(blob);
+            uploadVideo(blob);
         };
 
         mediaRecorderRef.current = recorder;
@@ -123,9 +126,21 @@ function UploadVertical() {
         }, 1000);
     }
 
+    function downloadVideo(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `vertical_${sessionDate}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setSaveToast(true);
+        setTimeout(() => setSaveToast(false), 3000);
+    }
+
     async function uploadVideo(fileOverride) {
+        const isUserFile = fileOverride instanceof File;
         const file = fileOverride || new Blob(chunksRef.current, { type: "video/webm" });
-        const filename = fileOverride ? fileOverride.name : "vertical.webm";
+        const filename = isUserFile ? fileOverride.name : "vertical.webm";
 
         const formData = new FormData();
         formData.append("session_date", sessionDate);
@@ -182,6 +197,12 @@ function UploadVertical() {
 
     return (
         <>
+            {saveToast && (
+                <div className="fixed bottom-6 right-6 z-[9999] bg-gray-900 text-white text-sm px-4 py-3 rounded-lg shadow-lg">
+                    Video guardado en tu dispositivo
+                </div>
+            )}
+
             {showFullscreen && (
                 <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
