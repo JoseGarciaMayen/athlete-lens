@@ -24,7 +24,7 @@ This approach failed for a fundamental reason: **asymmetric clap energy**. The s
 
 ## T = 0: the third beep, not frame 0 of the recording
 
-The `MediaRecorder` starts exactly when the third beep begins. Frame 0 of the video therefore corresponds to T = 0 of the sprint. Sprint time is `crossing_frame / fps`. No offset needed.
+The `MediaRecorder` starts exactly when the third beep begins. Frame 0 of the video therefore corresponds to T = 0 of the sprint. Sprint time is the WebM timestamp of the crossing frame.
 
 **Implementation detail:** `playCountdownBeeps` (frontend) schedules three beeps via the Web Audio API. `MediaRecorder.start()` is called after a `setTimeout` of `BEEP_GAP * 2 * 1000` ms (1000 ms), which corresponds exactly to when the third beep begins.
 
@@ -67,11 +67,24 @@ This is expected: a sprinting athlete moves consistently in one direction.
 
 ---
 
-## FPS: metadata or override
+## FPS: not used for the sprint time calculation
 
-`MediaRecorder` (the browser recording API) does not embed a valid FPS value in the WebM container; metadata often reads as `1000` or `0`. The endpoint accepts an optional `fps` form field; when provided, it overrides the metadata value. The frontend reads `videoTrack.getSettings().frameRate` and sends it as `fps`.
+`MediaRecorder` produces WebM video with unreliable FPS metadata. The sprint time is not computed as `crossing_frame / fps`. Instead, `detect_finish_crossing` reads `cv2.CAP_PROP_POS_MSEC` before every `cap.read()` to collect the real WebM timestamp of each frame:
 
-If `fps_override` is not provided and metadata FPS is outside the range `(0, 240]`, the endpoint returns an error rather than computing silently wrong results.
+```python
+ts = cap.get(cv2.CAP_PROP_POS_MSEC)
+ret, frame = cap.read()
+```
+
+When the crossing frame is found, its timestamp is returned directly:
+
+```python
+sprint_time_s = crossing_timestamp_ms / 1000.0
+```
+
+Since `MediaRecorder` starts at T = 0 (the third beep), the WebM timestamps are already relative to race start. No FPS value is involved.
+
+A global FPS is computed from all collected timestamps and reported in the response for informational purposes. The endpoint still accepts an optional `fps` form field as a last-resort fallback.
 
 ---
 

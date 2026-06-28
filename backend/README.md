@@ -75,17 +75,21 @@ Routes are defined as `def`, not `async def`. Video analysis is CPU-bound and bl
 
 All functions in `core/*/extractor.py` return dicts: `{"success": True, ...data}` or `{"success": False, "error": "..."}`. Python exceptions would be more idiomatic, but this pattern was established early and kept consistent across all modules.
 
-### SQLite, no migrations
+### SQLite or PostgreSQL, no migrations
 
-Single-user app, single machine. SQLite requires no server. Schema changes are handled by dropping and recreating the database with a manual backup. Alembic would add complexity not justified by the use case.
+Single-user app. SQLite works out of the box for local use with no server required. PostgreSQL (e.g. Supabase) can be used for remote persistence by setting `DATABASE_URL` in the environment. Schema changes are handled by dropping and recreating the database with a manual backup. Alembic would add complexity not justified by the use case.
 
 ### No authentication
 
 Single-user, local installation. If exposed via Cloudflare Tunnel, access can be restricted at the network layer (Cloudflare Access / Zero Trust) without touching the application code.
 
-### `fps` parameter on video endpoints
+### FPS is not trusted: timestamps are used instead
 
-`MediaRecorder` (the browser API used for recording) does not embed a valid FPS value in the WebM container; the metadata often reads as 1000 or 0. Both `/analyze/vertical` and `/analyze/sprint` accept an optional `fps` form field. When provided, it overrides the value read from video metadata. The frontend reads `videoTrack.getSettings().frameRate` before uploading and sends it as `fps`.
+`MediaRecorder` produces WebM video with unreliable FPS metadata (often `1000`, `0`, or a value that disagrees with the actual frame cadence). Both extractors ignore the FPS header and instead read `cv2.CAP_PROP_POS_MSEC` before each `cap.read()` to collect the real timestamp of every frame as stored in the WebM container.
+
+For vertical jump, flight time is `timestamps_ms[landing_frame] - timestamps_ms[takeoff_frame]`. For sprint, sprint time is the timestamp of the crossing frame directly. Neither calculation divides by FPS at any point.
+
+The `fps` form field is still accepted by both endpoints as a fallback, but is only used if timestamp extraction fails entirely.
 
 ### `distance_m` stored per metric, not per session
 

@@ -85,13 +85,27 @@ h = g · (t/2)² / 2  =  g · t² / 8
 
 ---
 
-## FPS: metadata or override
+## FPS: not used for the height calculation
 
-FPS is read from `cap.get(cv2.CAP_PROP_FPS)`. `MediaRecorder` (the browser recording API) does not embed a valid FPS value in the WebM container; metadata often reads as `1000` or `0`. The endpoint accepts an optional `fps` form field; when provided, it overrides the metadata value. The frontend reads `videoTrack.getSettings().frameRate` and sends it as `fps`.
+`MediaRecorder` produces WebM video with unreliable FPS metadata (often `1000`, `0`, or a nominal value that disagrees with the actual frame cadence). Real validation showed errors of up to 22% in jump height when FPS was wrong, because `h ∝ t²` amplifies FPS errors quadratically.
 
-If `fps_override` is not provided and metadata FPS is outside the range `(0, 240]`, the endpoint returns an error rather than computing silently wrong results.
+The module does not use FPS to compute flight time. Instead, `track_ankles` reads `cv2.CAP_PROP_POS_MSEC` before every `cap.read()` to collect the real timestamp of each frame as stored in the WebM container:
 
-**Known risk:** if metadata reports a non-integer (e.g. `59.94` instead of `60.0`) and no override is sent, the timing calculations inherit a small error.
+```python
+ts = cap.get(cv2.CAP_PROP_POS_MSEC)
+ret, frame = cap.read()
+timestamps_ms.append(ts)
+```
+
+Flight time is then:
+
+```python
+flight_time_ms = timestamps_ms[landing_frame] - timestamps_ms[takeoff_frame]
+```
+
+No FPS value is involved in the height calculation at any point. A local FPS is computed from the timestamps between takeoff and landing and reported in the response for informational purposes only.
+
+The endpoint still accepts an optional `fps` form field as a last-resort fallback if timestamp extraction fails entirely (e.g. malformed container with all-zero timestamps).
 
 **Input modes:** the upload component supports three modes: Record (countdown + camera, recommended), Upload video (file from device, for iOS compatibility or pre-recorded videos), and Manual (direct height entry, no video required).
 

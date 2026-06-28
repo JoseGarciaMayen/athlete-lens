@@ -49,7 +49,7 @@ h = g · t² / 8
 
 ![Sprint Detection](docs/sprint_crossing_readme.gif)
 
-The phone is placed at the finish line. A countdown timer gives the athlete time to reach the starting position. Three audible beeps mark T = 0; recording starts on the third beep. YOLOv8 Pose detects the frame where the athlete's hip center (keypoints 11/12) crosses the horizontal midpoint. Sprint time = `crossing_frame / fps`.
+The phone is placed at the finish line. A countdown timer gives the athlete time to reach the starting position. Three audible beeps mark T = 0; recording starts on the third beep. YOLOv8 Pose detects the frame where the athlete's hip center (keypoints 11/12) crosses the horizontal midpoint. Sprint time is read directly from the WebM timestamp of that frame.
 
 Direction is inferred automatically from the first detected frame. No manual configuration needed regardless of which side the phone faces.
 
@@ -67,7 +67,7 @@ Distance is entered manually after measuring with a tape. No video processing.
 
 | Layer | Technology |
 |---|---|
-| Backend | FastAPI, SQLAlchemy, SQLite, Python 3.12+ |
+| Backend | FastAPI, SQLAlchemy, SQLite/PostgreSQL, Python 3.12+ |
 | Computer vision | YOLOv8 Pose (`ultralytics`, `yolov8n-pose.pt`) |
 | Frontend | React 19, Vite, Tailwind CSS v4, Recharts |
 | Package manager | `uv` (Python), `npm` (JS) |
@@ -195,7 +195,9 @@ athlete-lens/
 
 # Security (recommended)
 
-The tunnel exposes the API publicly. Anyone with the URL can upload videos and delete metrics. For personal use this is low risk, but it is recommended to protect both subdomains with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust → Applications → Add an application). This adds a login screen (Google, GitHub, or email OTP) in front of the tunnel with no code changes required.
+The tunnel exposes the API publicly. Anyone with the URL can upload videos and delete metrics. For personal use this is low risk, but it is recommended to protect the frontend subdomain with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust → Applications → Add an application). This adds a login screen (Google, GitHub, or email OTP) in front of the app with no code changes required.
+
+Apply Access only to the frontend domain, not the API domain. Applying Access to the API blocks CORS preflight requests from the browser, which the service-token workaround cannot reliably solve. The API is protected indirectly: CORS restricts browser-based calls to the frontend origin, and the frontend URL itself is gated behind Access.
 
 ---
 

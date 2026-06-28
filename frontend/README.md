@@ -30,8 +30,7 @@ cp .env.example .env
 | `VITE_API_URL` | Backend base URL | `http://localhost:8000` |
 | `FRONTEND_URL` | Public frontend URL (used by backend CORS) | `http://localhost:5173` |
 | `VITE_ALLOWED_HOST` | Vite dev server allowed host (for Cloudflare Tunnel) | _(empty)_ |
-
-`.env` is gitignored. `.env.example` is committed with safe defaults.
+`.env` is used for local development and is gitignored. `.env.production` is used by `npm run build` and Netlify deployments, and holds the production URLs. Both files are gitignored.
 
 ---
 
@@ -70,14 +69,14 @@ Fetches `GET /api/metrics` and displays a paginated table (15 rows per page). Th
 1. **Camera recording:** countdown (configurable 5–15 s) → beep → timed recording (configurable 5–10 s) → auto-stop → upload.
 2. **Manual entry:** enter jump height in cm directly.
 
-Sends `multipart/form-data` to `POST /api/analyze/vertical` with `session_date`, `file` (WebM blob), and `fps` (read from `videoTrack.getSettings().frameRate` to work around invalid FPS metadata in WebM).
+Sends `multipart/form-data` to `POST /api/analyze/vertical` with `session_date` and `file` (WebM blob). The backend derives timing from the WebM frame timestamps directly, so no FPS value is sent.
 
 ### `UploadSprint`
 
 1. **Camera recording:** countdown (configurable 15–45 s) → three audible beeps (T = 0) → recording → manual stop → upload.
 2. **Manual entry:** enter sprint time in seconds directly.
 
-The full-screen camera preview during the countdown lets the athlete position the phone at the finish line before T = 0. Sends `fps` alongside the video blob for the same reason as vertical.
+The full-screen camera preview during the countdown lets the athlete position the phone at the finish line before T = 0. Sprint time is derived from the WebM timestamp of the crossing frame, so no FPS value is sent.
 
 ### `UploadHorizontal`
 
