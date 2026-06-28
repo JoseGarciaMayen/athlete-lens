@@ -76,15 +76,24 @@ ts = cap.get(cv2.CAP_PROP_POS_MSEC)
 ret, frame = cap.read()
 ```
 
-When the crossing frame is found, its timestamp is returned directly:
-
-```python
-sprint_time_s = crossing_timestamp_ms / 1000.0
-```
-
-Since `MediaRecorder` starts at T = 0 (the third beep), the WebM timestamps are already relative to race start. No FPS value is involved.
+When the crossing frame is found, its timestamp is refined using sub-frame interpolation (see below) before conversion to seconds. Since `MediaRecorder` starts at T = 0 (the third beep), the WebM timestamps are already relative to race start. No FPS value is involved.
 
 A global FPS is computed from all collected timestamps and reported in the response for informational purposes. The endpoint still accepts an optional `fps` form field as a last-resort fallback.
+
+---
+
+## Sub-frame interpolation at finish line crossing
+
+At 30 fps each frame interval is ~33 ms. Using the raw timestamp of the crossing frame introduces up to ±33 ms error in sprint time.
+
+`interpolate_crossing_time` finds the exact moment the hip center crosses `width / 2` between the previous frame and the crossing frame using linear interpolation:
+
+```python
+alpha = (midpoint_x - prev_hip_cx) / (crossing_hip_cx - prev_hip_cx)
+t_crossing = prev_ts + alpha * (crossing_ts - prev_ts)
+```
+
+This reduces timing error to approximately ±2-5 ms regardless of the recording frame rate. `detect_finish_crossing` retains the previous frame's `hip_cx` and timestamp for this purpose.
 
 ---
 

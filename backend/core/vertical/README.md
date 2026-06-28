@@ -97,15 +97,32 @@ ret, frame = cap.read()
 timestamps_ms.append(ts)
 ```
 
-Flight time is then:
-
-```python
-flight_time_ms = timestamps_ms[landing_frame] - timestamps_ms[takeoff_frame]
-```
+Flight time is then computed using sub-frame interpolation (see below), not raw frame timestamps.
 
 No FPS value is involved in the height calculation at any point. A local FPS is computed from the timestamps between takeoff and landing and reported in the response for informational purposes only.
 
 The endpoint still accepts an optional `fps` form field as a last-resort fallback if timestamp extraction fails entirely (e.g. malformed container with all-zero timestamps).
+
+---
+
+## Sub-frame interpolation at takeoff and landing
+
+At 30 fps each frame interval is ~33 ms. Using raw frame indices for takeoff and landing quantizes the flight time to the nearest frame, which introduces up to ±33 ms error. Since `h ∝ t²`, a ±33 ms error on a 500 ms flight time produces ~13% height error.
+
+`interpolate_threshold_crossing` finds the exact moment the ankle-Y trajectory crosses the detection threshold between two consecutive frames using linear interpolation:
+
+```python
+alpha = (threshold - y[frame-1]) / (y[frame] - y[frame-1])
+t_crossing = timestamps_ms[frame-1] + alpha * (timestamps_ms[frame] - timestamps_ms[frame-1])
+```
+
+The resulting `t_takeoff` and `t_landing` are sub-frame timestamps, and flight time is:
+
+```python
+flight_time_ms = t_landing - t_takeoff
+```
+
+This reduces timing error to approximately ±2-5 ms regardless of the recording frame rate.
 
 **Input modes:** the upload component supports three modes: Record (countdown + camera, recommended), Upload video (file from device, for iOS compatibility or pre-recorded videos), and Manual (direct height entry, no video required).
 
