@@ -42,6 +42,7 @@ function UploadSprint() {
     const videoRef = useRef(null);
     const audioCtxRef = useRef(null);
     const fpsRef = useRef(null);
+    const debugMetaRef = useRef(null);
 
     useEffect(() => {
         if (videoRef.current && streamRef.current) {
@@ -94,7 +95,19 @@ function UploadSprint() {
         playCountdownBeeps(audioCtxRef.current);
 
         const videoTrack = stream.getVideoTracks()[0];
-        fpsRef.current = videoTrack.getSettings().frameRate || 30;
+        const settings = videoTrack.getSettings();
+        const capabilities = videoTrack.getCapabilities?.() ?? {};
+        fpsRef.current = settings.frameRate || 30;
+        debugMetaRef.current = {
+            fps: settings.frameRate ?? null,
+            fps_range: capabilities.frameRate
+                ? { min: capabilities.frameRate.min, max: capabilities.frameRate.max }
+                : null,
+            resolution: { width: settings.width ?? null, height: settings.height ?? null },
+            recorded_at: new Date().toISOString(),
+            recording_stopped_at: null,
+            duration_s: null,
+        };
 
         await new Promise((resolve) => setTimeout(resolve, BEEP_GAP * 2 * 1000));
 
@@ -102,6 +115,12 @@ function UploadSprint() {
         const recorder = new MediaRecorder(stream);
         recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
         recorder.onstop = () => {
+            const stoppedAt = new Date().toISOString();
+            if (debugMetaRef.current) {
+                debugMetaRef.current.recording_stopped_at = stoppedAt;
+                const startMs = new Date(debugMetaRef.current.recorded_at).getTime();
+                debugMetaRef.current.duration_s = (Date.now() - startMs) / 1000;
+            }
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
             const blob = new Blob(chunksRef.current, { type: "video/webm" });
@@ -123,12 +142,26 @@ function UploadSprint() {
 
     function downloadVideo(blob) {
         const ts = new Date().toISOString().replace(/[-:]/g, "").replace("T", "_").slice(0, 15);
+        const baseName = `sprint_${ts}`;
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `sprint_${ts}.webm`;
+        a.download = `${baseName}.webm`;
         a.click();
         URL.revokeObjectURL(url);
+
+        if (debugMetaRef.current) {
+            const json = JSON.stringify(debugMetaRef.current, null, 2);
+            const jsonBlob = new Blob([json], { type: "application/json" });
+            const jsonUrl = URL.createObjectURL(jsonBlob);
+            const b = document.createElement("a");
+            b.href = jsonUrl;
+            b.download = `${baseName}_debug.json`;
+            b.click();
+            URL.revokeObjectURL(jsonUrl);
+        }
+
         setSaveToast(true);
         setTimeout(() => setSaveToast(false), 3000);
     }
