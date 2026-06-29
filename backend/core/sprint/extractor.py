@@ -27,6 +27,8 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, model: ultralytics
 
     frame_idx = 0
     all_timestamps_ms = []
+    prev_hip_cx = None
+    prev_ts = None
 
     while True:
         ts = cap.get(cv2.CAP_PROP_POS_MSEC)
@@ -66,12 +68,21 @@ def detect_finish_crossing(cap: cv2.VideoCapture, width: int, model: ultralytics
             crossed = (direction == "ltr" and hip_cx > midpoint_x) or (direction == "rtl" and hip_cx < midpoint_x)
 
             if crossed:
+                if prev_hip_cx is not None and hip_cx != prev_hip_cx:
+                    alpha = (midpoint_x - prev_hip_cx) / (hip_cx - prev_hip_cx)
+                    alpha = max(0.0, min(1.0, alpha))
+                    crossing_timestamp_ms = prev_ts + alpha * (ts - prev_ts)
+                else:
+                    crossing_timestamp_ms = ts
                 return {
                     "success": True,
                     "crossing_frame": frame_idx,
-                    "crossing_timestamp_ms": ts,
+                    "crossing_timestamp_ms": crossing_timestamp_ms,
                     "all_timestamps_ms": all_timestamps_ms,
                 }
+
+            prev_hip_cx = hip_cx
+            prev_ts = ts
 
         frame_idx += 1
 
